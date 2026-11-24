@@ -9,7 +9,8 @@
 # 5. App info: Back is selected first, Remove asks with "No" selected, Update and Remove
 #    call nz-admin; dpkg-query, dpkg and sudo are the stand-ins in test/bin
 # 6. themes: the ones in themes/ (via test/root/usr/share/emuzero/themes), a user theme made
-#    here with the chrome the others do not use, and the Theme page (keep, cancel, saved file)
+#    here with the chrome the others do not use and pictures of its own, and the Theme page
+#    (keep, cancel, saved file). emuZero's icons/ are linked in as /usr/share/emuzero/icons.
 set -e
 bin=$1; out=$2
 here=$(cd "$(dirname "$0")" && pwd)
@@ -87,6 +88,7 @@ shot paper-grid      --theme paper
 shot paper-carousel  --theme paper --layout carousel --keys right
 u="$HOME/.local/share/emuzero/themes/testbar"; mkdir -p "$u"
 cp "$here/root/usr/share/APPLaunch/share/images/camera.png" "$u/wall.png"
+mkdir -p "$u/icons"; cp "$here/../icons/nz-snake.png" "$u/icons/snake.png"; cp "$here/../icons/nano.png" "$u/icons/nz-options.png"
 cat > "$u/theme.conf" <<'EOF2'
 name = Test bar
 [colors]
@@ -112,11 +114,14 @@ nonsense = 1
 EOF2
 "$bin" --theme testbar --shot "$out/testbar.png" 2>"$out/testbar.err" >/dev/null
 grep -q "unknown key window.nonsense" "$out/testbar.err" || { echo "check: an unknown key was not reported"; exit 1; }
+"$bin" --theme testbar --list > "$out/testbar-apps.txt"
+grep -qx "snake	Snake	theme" "$out/testbar-apps.txt" && grep -qx "nz-options	Options	theme" "$out/testbar-apps.txt" \
+	|| { echo "check: the theme's own icons were not used"; grep -E "^(snake|nz-options)	" "$out/testbar-apps.txt"; exit 1; }
 shot testbar-carousel --theme testbar
 shot testbar-grid     --theme testbar --layout grid --keys right
 shot testbar-info     --theme testbar --keys right,right,i
 "$bin" --theme nosuch --shot "$out/nosuch.png" 2>&1 >/dev/null | grep -q "theme nosuch not found" || { echo "check: a missing theme was not reported"; exit 1; }
-echo "check: user theme (bottom bar, bevel, wallpaper, mono font) and bad keys reported"
+echo "check: user theme (bottom bar, bevel, wallpaper, mono font, own icons) and bad keys reported"
 
 # the Theme page: T, Right = next theme (paper), Enter keeps it; Esc puts the old one back
 rm -f "$HOME/.config/emuzero/settings"

@@ -14,6 +14,7 @@
 #include "platform.h"
 #include "ui.h"
 #include "apps.h"
+#include "icons.h"
 #include "theme.h"
 
 #ifndef EMUZERO_VERSION
@@ -71,21 +72,25 @@ static void usage(void)
 int main(int argc, char **argv)
 {
 	struct plat_opts o = { .zoom = 3 };
+	const char *theme_arg = NULL;
 	for (int i = 1; i < argc; i++) {
 		const char *a = argv[i], *v = i + 1 < argc ? argv[i + 1] : NULL;
 		if (!strcmp(a, "--version")) { printf("emuzero-launcher %s (%s)\n", EMUZERO_VERSION, plat_name()); return 0; }
 		else if (!strcmp(a, "--help") || !strcmp(a, "-h")) { usage(); return 0; }
 		else if (!strcmp(a, "--list")) {   /* the apps the home screen shows, one per line */
 			apps_scan();
-			for (int k = 0; k < napps; k++)
-				printf("%s\t%s\t%s\n", apps[k].id, apps[k].name, apps[k].icon[0] ? "icon" : "tile");
+			if (theme_arg) theme_load(theme_arg);   /* --theme first: which pictures it brings */
+			for (int k = 0; k < napps; k++) {
+				const char *f = icon_file(&apps[k]);
+				printf("%s\t%s\t%s\n", apps[k].id, apps[k].name, !f ? "tile" : f == apps[k].icon ? "icon" : "theme");
+			}
 			return 0;
 		}
 		else if (!strcmp(a, "--kbd") && v) { o.kbd = v; i++; }
 		else if (!strcmp(a, "--keys") && v) { o.keys = v; i++; }
 		else if (!strcmp(a, "--shot") && v) { o.shot = v; i++; }
 		else if (!strcmp(a, "--zoom") && v) { o.zoom = atoi(v); i++; }
-		else if (!strcmp(a, "--theme") && v) { ui_set_theme(v); i++; }
+		else if (!strcmp(a, "--theme") && v) { ui_set_theme(theme_arg = v); i++; }
 		else if (!strcmp(a, "--themes")) {   /* the themes that can be chosen, one per line */
 			char ids[32][32];
 			int n = theme_list(ids, 32);

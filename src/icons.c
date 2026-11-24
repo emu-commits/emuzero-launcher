@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 #include "icons.h"
+#include "theme.h"
 #include "ui.h"
 #include <png.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define CACHE_MAX 256
 static struct { char path[512]; int size; lv_draw_buf_t *buf; } cache[CACHE_MAX];
@@ -132,9 +134,20 @@ static lv_obj_t *tile(lv_obj_t *parent, const struct app *a, int size)
 	return t;
 }
 
+const char *icon_file(const struct app *a)
+{
+	static char p[512];
+	if (theme.dir[0]) {
+		snprintf(p, sizeof(p), "%.380s/icons/%.63s.png", theme.dir, a->id);
+		if (!access(p, R_OK)) return p;
+	}
+	return a->icon[0] ? a->icon : NULL;
+}
+
 lv_obj_t *icon_create(lv_obj_t *parent, const struct app *a, int size)
 {
-	lv_draw_buf_t *buf = a->icon[0] ? cached(a->icon, size) : NULL;
+	const char *f = icon_file(a);
+	lv_draw_buf_t *buf = f ? cached(f, size) : NULL;
 	if (!buf) return tile(parent, a, size);
 	lv_obj_t *img = lv_image_create(parent);
 	lv_image_set_src(img, buf);

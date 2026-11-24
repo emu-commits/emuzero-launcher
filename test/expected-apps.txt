@@ -9,12 +9,12 @@ keys	Keyboard guide	tile
 tracker	Music tracker	icon
 netinfo	Network info	tile
 onlyhere	Only in emuZero	tile
-nz-options	Options	tile
+nz-options	Options	icon
 poweroff	Power off	tile
 snake	Snake	tile
 monitor	System monitor	tile
 shell	Terminal	tile
-emuzero-theme	Theme	tile
+emuzero-theme	Theme	icon
 tide	Tide tables	icon
 weather	Weather	tile
 wifi	Wi-Fi setup	tile

@@ -1,6 +1,7 @@
 # emuZero themes
 
-A theme is a folder holding a `theme.conf`, plus any fonts or pictures that file names. The
+A theme is a folder holding a `theme.conf`, plus any fonts or pictures that file names, and
+optionally an `icons/` folder. The
 launcher looks for themes in two places:
 
 - `~/.local/share/emuzero/themes/NAME/`: your own. You can add these without root, and they win over the
@@ -62,6 +63,15 @@ Colours are written `#rrggbb`. Yes/no keys take `yes`, `no`, `on`, `off`, `true`
 
 The battery badge keeps its own colours (green, yellow at 35 % and below, red at 15 % and
 below). With `badges = plain` those colours go to the text.
+
+## Icons
+
+A theme can give apps pictures of its own: `icons/ID.png` in the theme folder, where ID is the
+app's id (its `.desktop` file name without `.desktop`, for example `nz-terminal`, `nz-options`,
+`camera_app`; the Theme tile is `emuzero-theme`). An app without one in the theme keeps its own
+picture, else emuZero's from `/usr/share/emuzero/icons/` (see `icons/README.md`), else a tile
+with its first letter. Pictures are PNG, square looks best, up to 1024 pixels; they are scaled
+down to the size each layout draws.
 
 ## The themes here
 

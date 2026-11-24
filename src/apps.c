@@ -87,6 +87,17 @@ static void strip_field_codes(char *s)
 	*o = 0;
 }
 
+/* emuZero's own picture for an app that brings none (or whose picture went with another
+ * package, as Keyboard Guide's goes with M5's launcher): /usr/share/emuzero/icons/ID.png */
+static void own_icon(struct app *a)
+{
+	char rel[128], p[512];
+	if (a->icon[0]) return;
+	snprintf(rel, sizeof(rel), "/usr/share/emuzero/icons/%.63s.png", a->id);
+	path_join(p, sizeof(p), rel);
+	if (readable(p)) snprintf(a->icon, sizeof(a->icon), "%s", p);
+}
+
 static void read_entry(const char *file, const char devfile[320], const char *id, const char *base)
 {
 	FILE *f = fopen(file, "r");
@@ -119,6 +130,7 @@ static void read_entry(const char *file, const char devfile[320], const char *id
 	strip_field_codes(a.exec);
 	if (hidden || !is_app || !a.name[0] || !a.exec[0]) return;
 	find_icon(&a, icon, base);
+	own_icon(&a);
 	apps[napps++] = a;
 }
 
@@ -173,6 +185,7 @@ int apps_scan(void)
 	/* the launcher's own tile: Theme (theme and home layout) */
 	if (napps < APPS_MAX && !known("emuzero-theme")) {
 		struct app t = { .id = "emuzero-theme", .name = "Theme", .comment = "Theme and home layout", .exec = APP_THEME };
+		own_icon(&t);
 		apps[napps++] = t;
 	}
 	qsort(apps, napps, sizeof(apps[0]), by_name);
