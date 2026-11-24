@@ -92,6 +92,22 @@ static void backlight(int on)
 	if (d) closedir(d);
 }
 
+/* is a backlight off (bl_power not 0)? then the launcher before us left the screen dark */
+static int backlight_off(void)
+{
+	int off = 0;
+	DIR *d = opendir("/sys/class/backlight");
+	for (struct dirent *e; d && (e = readdir(d));) {
+		char p[300], v[8] = "";
+		if (e->d_name[0] == '.') continue;
+		snprintf(p, sizeof(p), "/sys/class/backlight/%s/bl_power", e->d_name);
+		int fd = open(p, O_RDONLY | O_CLOEXEC);
+		if (fd >= 0) { if (read(fd, v, sizeof(v) - 1) > 0 && v[0] != '0') off = 1; close(fd); }
+	}
+	if (d) closedir(d);
+	return off;
+}
+
 static void screen_power(int on)
 {
 	if (on && fbfd >= 0) ioctl(fbfd, FBIOBLANK, FB_BLANK_UNBLANK);
@@ -107,8 +123,12 @@ lv_display_t *plat_display(const struct plat_opts *o)
 	if (!disp) return NULL;
 	lv_linux_fbdev_set_file(disp, "/dev/fb0");
 	fbfd = open("/dev/fb0", O_RDWR | O_CLOEXEC);
-	if (fbfd >= 0) ioctl(fbfd, FBIOBLANK, FB_BLANK_UNBLANK);   /* the launcher before us may have left it dark */
-	backlight(1);
+	/* the launcher before us may have left it dark; unblanking a lit panel costs a frame or
+	 * two (16-25 ms: the driver commits the display again), so only when it is dark */
+	if (backlight_off()) {
+		if (fbfd >= 0) ioctl(fbfd, FBIOBLANK, FB_BLANK_UNBLANK);
+		backlight(1);
+	}
 	refr = lv_display_get_refr_timer(disp);
 	lv_display_add_event_cb(disp, on_invalidate, LV_EVENT_INVALIDATE_AREA, NULL);
 	lv_display_add_event_cb(disp, on_refr_ready, LV_EVENT_REFR_READY, NULL);
