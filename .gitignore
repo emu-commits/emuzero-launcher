@@ -1,0 +1,3 @@
+third_party/lvgl/
+third_party/*.tar.gz
+spike/out/
