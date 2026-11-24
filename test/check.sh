@@ -8,12 +8,16 @@
 # 4. Enter and O start the right command lines (the headless build prints them)
 # 5. App info: Back is selected first, Remove asks with "No" selected, Update and Remove
 #    call nz-admin; dpkg-query, dpkg and sudo are the stand-ins in test/bin
+# 6. themes: the ones in themes/ (via test/root/usr/share/emuzero/themes), a user theme made
+#    here with the chrome the others do not use, and the Theme page (keep, cancel, saved file)
 set -e
 bin=$1; out=$2
 here=$(cd "$(dirname "$0")" && pwd)
 export EMUZERO_ROOT="$here/root"
 export PATH="$here/bin:$PATH"
 mkdir -p "$out"
+export HOME="$out/home"; unset XDG_CONFIG_HOME XDG_DATA_HOME   # settings and user themes of the test only
+rm -rf "$HOME"; mkdir -p "$HOME"
 "$bin" --list > "$out/apps.txt"
 diff -u "$here/expected-apps.txt" "$out/apps.txt"
 echo "check: app list ok ($(wc -l < "$out/apps.txt") apps)"
@@ -74,4 +78,57 @@ admin info-files-confirm "" right,right,right,right,right,right,i,right,enter   
 admin info-own "" right,right,right,right,right,right,right,right,right,right,right,i                 # Options: held, no Remove
 admin info-own-enter "" right,right,right,right,right,right,right,right,right,right,right,i,right,right,enter
 admin info-local "" right,right,right,right,right,i                # /usr/local entry: no package
+
+# 6. themes
+"$bin" --themes > "$out/themes.txt"
+printf 'minimal\tMinimal\npaper\tPaper\n' | diff -u - "$out/themes.txt"
+echo "check: themes listed (minimal, paper)"
+shot paper-grid      --theme paper
+shot paper-carousel  --theme paper --layout carousel --keys right
+u="$HOME/.local/share/emuzero/themes/testbar"; mkdir -p "$u"
+cp "$here/root/usr/share/APPLaunch/share/images/camera.png" "$u/wall.png"
+cat > "$u/theme.conf" <<'EOF2'
+name = Test bar
+[colors]
+background = #203040
+[fonts]
+regular = DejaVuSansMono.ttf
+[home]
+wallpaper = wall.png
+card_radius = 0
+[bar]
+position = bottom
+badges = sunken
+title = TEST
+[window]
+show = yes
+bevel = raised
+title = Raised
+title_height = 12
+background = #c0c0c0
+title_background = #000080
+title_color = #ffffff
+nonsense = 1
+EOF2
+"$bin" --theme testbar --shot "$out/testbar.png" 2>"$out/testbar.err" >/dev/null
+grep -q "unknown key window.nonsense" "$out/testbar.err" || { echo "check: an unknown key was not reported"; exit 1; }
+shot testbar-carousel --theme testbar
+shot testbar-grid     --theme testbar --layout grid --keys right
+shot testbar-info     --theme testbar --keys right,right,i
+"$bin" --theme nosuch --shot "$out/nosuch.png" 2>&1 >/dev/null | grep -q "theme nosuch not found" || { echo "check: a missing theme was not reported"; exit 1; }
+echo "check: user theme (bottom bar, bevel, wallpaper, mono font) and bad keys reported"
+
+# the Theme page: T, Right = next theme (paper), Enter keeps it; Esc puts the old one back
+rm -f "$HOME/.config/emuzero/settings"
+shot themepage       --keys t
+shot themepage-paper --keys t,right
+"$bin" --keys t,right,enter > /dev/null
+grep -qx "theme=paper" "$HOME/.config/emuzero/settings" || { echo "check: Theme page did not save paper"; cat "$HOME/.config/emuzero/settings"; exit 1; }
+shot saved-paper
+"$bin" --keys t,down,right,right,esc > /dev/null
+grep -qx "layout=" "$HOME/.config/emuzero/settings" || { echo "check: Esc on the Theme page changed the layout"; exit 1; }
+"$bin" --keys t,down,right,enter > /dev/null
+grep -qx "layout=carousel" "$HOME/.config/emuzero/settings" || { echo "check: Theme page did not save the layout"; exit 1; }
+rm -f "$HOME/.config/emuzero/settings"
+echo "check: Theme page keeps, cancels and saves"
 echo "check: all passed"

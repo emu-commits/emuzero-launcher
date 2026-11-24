@@ -16,6 +16,9 @@ struct app {
 	int terminal;       /* Terminal=true: runs on the text console */
 };
 
+/* Exec of the launcher's own Theme tile (no program: the Theme page opens) */
+#define APP_THEME "@theme"
+
 extern struct app apps[APPS_MAX];
 extern int napps;
 

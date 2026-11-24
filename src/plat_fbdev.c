@@ -72,7 +72,7 @@ static void console_text(void) { if (tty >= 0) ioctl(tty, KDSETMODE, KD_TEXT); }
 
 static void on_term(int sig)
 {
-	console_text();   /* leave the console readable for the login prompt that follows */
+	console_text();   /* leave the console readable for what follows (login prompt, message) */
 	signal(sig, SIG_DFL);
 	raise(sig);
 }
@@ -126,6 +126,12 @@ lv_display_t *plat_display(const struct plat_opts *o)
 		signal(SIGTERM, on_term);
 		signal(SIGHUP, on_term);
 		signal(SIGINT, on_term);
+		/* a crash too: nz-console then shows why another launcher starts */
+		signal(SIGSEGV, on_term);
+		signal(SIGBUS, on_term);
+		signal(SIGABRT, on_term);
+		signal(SIGFPE, on_term);
+		signal(SIGILL, on_term);
 		atexit(console_text);
 	}
 	signal(SIGTTOU, SIG_IGN);   /* we hand the terminal to apps and take it back */

@@ -49,6 +49,7 @@ static void find_package(void)
 	size_kb = -1;
 	removable = 0;
 	snprintf(note, sizeof(note), "Part of NimbleZero; it cannot be removed.");
+	if (!app.file[0]) { snprintf(note, sizeof(note), "Part of emuZero; it cannot be removed."); return; }
 	/* "camera: /usr/share/APPLaunch/applications/camera_app.desktop" */
 	if (sys_run(argv, out, sizeof(out)) != 0) return;
 	char *colon = strstr(out, ": ");
@@ -118,8 +119,8 @@ static void draw_buttons(void)
 {
 	lv_obj_clean(buttons_row);
 	for (int i = 0; i < nacts; i++) {
-		lv_obj_t *b = ui_label(buttons_row, ui_font(13, 1), i == cur ? theme.fg : theme.dim, act_text(acts[i]));
-		lv_obj_set_style_radius(b, 6, 0);
+		lv_obj_t *b = ui_label(buttons_row, ui_font(13, 1), i == cur ? theme.sel_fg : theme.dim, act_text(acts[i]));
+		lv_obj_set_style_radius(b, theme.card_radius ? 6 : 0, 0);
 		lv_obj_set_style_pad_hor(b, 9, 0);
 		lv_obj_set_style_pad_ver(b, 4, 0);
 		lv_obj_set_style_border_width(b, i == cur ? 2 : 1, 0);
@@ -144,7 +145,7 @@ static void page(const char *title, const char *body, const enum action *a, int 
 	lv_obj_t *col = lv_obj_create(panel);
 	lv_obj_remove_style_all(col);
 	lv_obj_remove_flag(col, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-	lv_obj_set_size(col, SCREEN_W - 16, SCREEN_H - BAR_H - 1 - 40);
+	lv_obj_set_size(col, SCREEN_W - 16, ui_page_rect().h - 40);
 	lv_obj_set_pos(col, 8, 6);
 	lv_obj_set_flex_flow(col, LV_FLEX_FLOW_COLUMN);
 	lv_obj_set_style_pad_row(col, 3, 0);
@@ -279,8 +280,9 @@ void appinfo_open(lv_obj_t *scr, const struct app *a, void (*done)(int changed))
 	panel = lv_obj_create(scr);
 	lv_obj_remove_style_all(panel);
 	lv_obj_remove_flag(panel, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-	lv_obj_set_pos(panel, 0, BAR_H + 1);
-	lv_obj_set_size(panel, SCREEN_W, SCREEN_H - BAR_H - 1);
+	struct ui_rect r = ui_page_rect();
+	lv_obj_set_pos(panel, r.x, r.y);
+	lv_obj_set_size(panel, r.w, r.h);
 	lv_obj_set_style_bg_opa(panel, LV_OPA_COVER, 0);
 	lv_obj_set_style_bg_color(panel, lv_color_hex(theme.bg), 0);
 	find_package();

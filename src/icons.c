@@ -63,6 +63,34 @@ static lv_draw_buf_t *cached(const char *path, int size)
 	return buf;
 }
 
+/* A picture filling w x h (scaled to cover, centred, the rest cut off), for wallpapers. One is
+ * kept; loading another frees it. */
+lv_draw_buf_t *picture_load(const char *path, int w, int h)
+{
+	static lv_draw_buf_t *last;
+	if (last) { lv_draw_buf_destroy(last); last = NULL; }
+	png_image im = { .version = PNG_IMAGE_VERSION };
+	if (!png_image_begin_read_from_file(&im, path)) return NULL;
+	im.format = PNG_FORMAT_BGRA;
+	if (im.width == 0 || im.height == 0 || im.width > 2048 || im.height > 2048) { png_image_free(&im); return NULL; }
+	uint8_t *src = malloc(PNG_IMAGE_SIZE(im));
+	if (!src || !png_image_finish_read(&im, NULL, src, 0, NULL)) { free(src); png_image_free(&im); return NULL; }
+	int sw = im.width, sh = im.height;
+	/* the source rectangle with the screen's shape */
+	int cw = sw, ch = sw * h / w;
+	if (ch > sh) { ch = sh; cw = sh * w / h; }
+	int cx = (sw - cw) / 2, cy = (sh - ch) / 2;
+	lv_draw_buf_t *buf = lv_draw_buf_create(w, h, LV_COLOR_FORMAT_ARGB8888, 0);
+	if (buf)
+		for (int y = 0; y < h; y++) {
+			uint8_t *out = buf->data + (size_t)y * buf->header.stride;
+			const uint8_t *row = src + ((size_t)(cy + y * ch / h) * sw) * 4;
+			for (int x = 0; x < w; x++, out += 4) memcpy(out, row + (size_t)(cx + x * cw / w) * 4, 4);
+		}
+	free(src);
+	return last = buf;
+}
+
 void icon_cache_clear(void)
 {
 	for (int i = 0; i < ncache; i++)

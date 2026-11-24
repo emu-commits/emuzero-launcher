@@ -14,6 +14,7 @@ poweroff	Power off	tile
 snake	Snake	tile
 monitor	System monitor	tile
 shell	Terminal	tile
+emuzero-theme	Theme	tile
 tide	Tide tables	icon
 weather	Weather	tile
 wifi	Wi-Fi setup	tile

@@ -8,5 +8,7 @@
 
 /* a size x size object showing the app's icon */
 lv_obj_t *icon_create(lv_obj_t *parent, const struct app *a, int size);
+/* a PNG picture covering w x h (wallpaper); stays valid until the next call; NULL if unreadable */
+lv_draw_buf_t *picture_load(const char *path, int w, int h);
 /* drop decoded icons (after a rescan) */
 void icon_cache_clear(void);

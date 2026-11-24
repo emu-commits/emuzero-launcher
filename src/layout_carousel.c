@@ -8,16 +8,30 @@
 #include "theme.h"
 #include "ui.h"
 
-/* card slots: left neighbour, selected, right neighbour */
-static const struct { int dx, card, icon, border; } slot[3] = {
-	{ -106, 74, 52, 2 }, { 0, 96, 70, 3 }, { 106, 74, 52, 2 },
-};
-#define CARD_CY 54     /* card centre line inside the area */
-#define NAME_Y 108
+/* geometry from the area's size (a theme's window frame makes it smaller): the selected card
+ * as large as fits up to 96 px, its neighbours at 3/4; then the name, then the position bar */
+static int W, H, S, CY, NAME_Y, TRACK_Y, DX;
+static struct { int dx, card, icon, border; } slot[3];
 #define TRACK_W 150
-#define TRACK_Y 136
 
 static lv_obj_t *area, *card[3], *name[3], *chev[2], *track, *knob;
+
+static void geometry(lv_obj_t *a)
+{
+	W = lv_obj_get_width(a);
+	H = lv_obj_get_height(a);
+	int avail = H - (theme.track ? 15 : 2) - 24 - 12;
+	S = avail < 96 ? avail : 96;
+	if (S < 40) S = 40;
+	CY = 6 + S / 2;
+	NAME_Y = CY + S / 2 + 6;
+	TRACK_Y = H - 15;
+	DX = W / 3 < 106 ? W / 3 : 106;
+	int side = S * 74 / 96;
+	slot[0] = (typeof(slot[0])){ -DX, side, S * 52 / 96, theme.card_border };
+	slot[1] = (typeof(slot[1])){ 0, S, S * 70 / 96, theme.card_sel_border };
+	slot[2] = (typeof(slot[2])){ DX, side, S * 52 / 96, theme.card_border };
+}
 
 static lv_obj_t *box(lv_obj_t *parent)
 {
@@ -36,37 +50,40 @@ static void hide(lv_obj_t *o, int hidden)
 static void create(lv_obj_t *a)
 {
 	area = a;
+	geometry(a);
+	int cx = W / 2;
 	for (int i = 0; i < 3; i++) {
 		int sel = i == 1;
 		card[i] = box(area);
 		lv_obj_set_size(card[i], slot[i].card, slot[i].card);
-		lv_obj_set_pos(card[i], 160 + slot[i].dx - slot[i].card / 2, CARD_CY - slot[i].card / 2);
-		lv_obj_set_style_radius(card[i], slot[i].card / 5, 0);
+		lv_obj_set_pos(card[i], cx + slot[i].dx - slot[i].card / 2, CY - slot[i].card / 2);
+		lv_obj_set_style_radius(card[i], slot[i].card * theme.card_radius / 100, 0);
 		lv_obj_set_style_bg_opa(card[i], LV_OPA_COVER, 0);
-		lv_obj_set_style_bg_color(card[i], lv_color_hex(sel ? theme.sel_bg : theme.bg), 0);
+		lv_obj_set_style_bg_color(card[i], lv_color_hex(sel ? theme.card_sel_bg : theme.card_bg), 0);
 		lv_obj_set_style_border_width(card[i], slot[i].border, 0);
-		lv_obj_set_style_border_color(card[i], lv_color_hex(sel ? theme.fg : theme.line), 0);
+		lv_obj_set_style_border_color(card[i], lv_color_hex(sel ? theme.card_sel_line : theme.card_line), 0);
 
 		lv_font_t *f = ui_font(sel ? 15 : 13, 1);
-		name[i] = ui_label(area, f, sel ? theme.fg : theme.dim, "");
-		lv_obj_set_size(name[i], sel ? 112 : 84, lv_font_get_line_height(f));
+		int nw = sel ? (DX + 6 < 112 ? DX + 6 : 112) : (DX - 22 < 84 ? DX - 22 : 84);
+		name[i] = ui_label(area, f, sel ? theme.name_sel_fg : theme.name_fg, "");
+		lv_obj_set_size(name[i], nw, lv_font_get_line_height(f));
 		lv_label_set_long_mode(name[i], LV_LABEL_LONG_DOT);
 		lv_obj_set_style_text_align(name[i], LV_TEXT_ALIGN_CENTER, 0);
-		lv_obj_set_pos(name[i], 160 + slot[i].dx - (sel ? 56 : 42), NAME_Y + (sel ? 0 : 2));
+		lv_obj_set_pos(name[i], cx + slot[i].dx - nw / 2, NAME_Y + (sel ? 0 : 2));
 	}
 	for (int i = 0; i < 2; i++) {
 		chev[i] = ui_label(area, ui_font(24, 1), theme.dim, i ? "\u203a" : "\u2039");   /* single angle quotes */
-		lv_obj_align(chev[i], i ? LV_ALIGN_TOP_RIGHT : LV_ALIGN_TOP_LEFT, i ? -2 : 2, CARD_CY - 16);
+		lv_obj_align(chev[i], i ? LV_ALIGN_TOP_RIGHT : LV_ALIGN_TOP_LEFT, i ? -2 : 2, CY - 16);
 	}
 	track = box(area);
 	lv_obj_set_size(track, TRACK_W, 4);
-	lv_obj_set_pos(track, 160 - TRACK_W / 2, TRACK_Y);
+	lv_obj_set_pos(track, cx - TRACK_W / 2, TRACK_Y);
 	lv_obj_set_style_radius(track, 2, 0);
 	lv_obj_set_style_bg_opa(track, LV_OPA_COVER, 0);
 	lv_obj_set_style_bg_color(track, lv_color_hex(theme.line), 0);
 	knob = box(area);
 	lv_obj_set_size(knob, 10, 10);
-	lv_obj_set_style_radius(knob, 5, 0);
+	lv_obj_set_style_radius(knob, theme.card_radius ? 5 : 0, 0);
 	lv_obj_set_style_bg_opa(knob, LV_OPA_COVER, 0);
 	lv_obj_set_style_bg_color(knob, lv_color_hex(theme.accent), 0);
 }
@@ -83,10 +100,10 @@ static void show(int sel)
 		lv_label_set_text(name[i], on ? apps[idx].name : off ? "" : "No apps installed");
 	}
 	int many = napps > 1;
-	for (int i = 0; i < 2; i++) hide(chev[i], !many);
-	hide(track, !many);
-	hide(knob, !many);
-	if (many) lv_obj_set_pos(knob, 160 - TRACK_W / 2 + (TRACK_W - 10) * sel / (napps - 1), TRACK_Y - 3);
+	for (int i = 0; i < 2; i++) hide(chev[i], !many || !theme.chevrons);
+	hide(track, !many || !theme.track);
+	hide(knob, !many || !theme.track);
+	if (many) lv_obj_set_pos(knob, W / 2 - TRACK_W / 2 + (TRACK_W - 10) * sel / (napps - 1), TRACK_Y - 3);
 }
 
 static int move(uint32_t key, int sel, int n)

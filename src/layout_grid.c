@@ -11,10 +11,8 @@
 #define COLS 5
 #define ROWS 2
 #define PER (COLS * ROWS)
-#define CELL_W 64
-#define CELL_H 64
 #define TOP 4
-#define ICON 40
+static int CELL_W, CELL_H, ICON;   /* from the area's size: 64 x 67 with a 40 px icon full screen */
 
 static lv_obj_t *area, *page_box, *hilite, *dots;
 static lv_obj_t *names[PER];
@@ -23,10 +21,15 @@ static int shown_page = -1;
 static void create(lv_obj_t *a)
 {
 	area = a;
+	CELL_W = lv_obj_get_width(a) / COLS;
+	CELL_H = (lv_obj_get_height(a) - TOP - 12) / ROWS;
+	if (CELL_H > 64) CELL_H = 64;
+	ICON = CELL_H - 22 < 40 ? CELL_H - 22 : 40;
+	if (ICON > CELL_W - 16) ICON = CELL_W - 16;
 	hilite = lv_obj_create(area);
 	lv_obj_remove_style_all(hilite);
 	lv_obj_set_size(hilite, CELL_W - 4, CELL_H);
-	lv_obj_set_style_radius(hilite, 8, 0);
+	lv_obj_set_style_radius(hilite, theme.card_radius ? 8 : 0, 0);
 	lv_obj_set_style_bg_opa(hilite, LV_OPA_COVER, 0);
 	lv_obj_set_style_bg_color(hilite, lv_color_hex(theme.sel_bg), 0);
 	lv_obj_set_style_border_width(hilite, 1, 0);
@@ -58,7 +61,7 @@ static void build_page(int page)
 		lv_obj_t *ic = icon_create(page_box, &apps[i], ICON);
 		lv_obj_set_pos(ic, x + (CELL_W - ICON) / 2, y + 5);
 		lv_font_t *f = ui_font(11, 0);
-		lv_obj_t *l = ui_label(page_box, f, theme.dim, apps[i].name);
+		lv_obj_t *l = ui_label(page_box, f, theme.name_fg, apps[i].name);
 		lv_obj_set_size(l, CELL_W - 6, lv_font_get_line_height(f));   /* one line, cut with dots */
 		lv_label_set_long_mode(l, LV_LABEL_LONG_DOT);
 		lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
@@ -71,7 +74,7 @@ static void build_page(int page)
 		lv_obj_t *d = lv_obj_create(dots);
 		lv_obj_remove_style_all(d);
 		lv_obj_set_size(d, p == page ? 14 : 6, 6);
-		lv_obj_set_style_radius(d, 3, 0);
+		lv_obj_set_style_radius(d, theme.card_radius ? 3 : 0, 0);
 		lv_obj_set_style_bg_opa(d, LV_OPA_COVER, 0);
 		lv_obj_set_style_bg_color(d, lv_color_hex(p == page ? theme.accent : theme.line), 0);
 	}
@@ -91,7 +94,7 @@ static void show(int sel)
 	int page = sel / PER, k = sel % PER;
 	if (page != shown_page) build_page(page);
 	for (int j = 0; j < PER; j++)
-		if (names[j]) lv_obj_set_style_text_color(names[j], lv_color_hex(j == k ? theme.fg : theme.dim), 0);
+		if (names[j]) lv_obj_set_style_text_color(names[j], lv_color_hex(j == k ? theme.sel_fg : theme.name_fg), 0);
 	lv_obj_remove_flag(hilite, LV_OBJ_FLAG_HIDDEN);
 	lv_obj_set_pos(hilite, (k % COLS) * CELL_W + 2, TOP + (k / COLS) * CELL_H);
 }

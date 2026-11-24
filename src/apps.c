@@ -170,6 +170,11 @@ int apps_scan(void)
 		}
 		free(list);
 	}
+	/* the launcher's own tile: Theme (theme and home layout) */
+	if (napps < APPS_MAX && !known("emuzero-theme")) {
+		struct app t = { .id = "emuzero-theme", .name = "Theme", .comment = "Theme and home layout", .exec = APP_THEME };
+		apps[napps++] = t;
+	}
 	qsort(apps, napps, sizeof(apps[0]), by_name);
 	return napps;
 }

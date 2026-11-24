@@ -20,15 +20,17 @@ One source tree, three builds:
 | `make device` | the CardputerZero program, `out/fbdev/emuzero-launcher` | a NimbleZero Buildroot output (`BR=.../out/compat`) |
 | `make desktop` | the same screen in a window on a PC (`--zoom N`, default 3) | SDL2, FreeType and libpng development files |
 | `make headless` | draws into memory and writes a PNG after a key script | FreeType and libpng development files |
-| `make check` | headless checks against `test/root`: the app list, each layout and status bar state as PNGs in `out/check`, the command lines Enter and O start, and App info's Back / Remove / Update paths (`test/bin` stands in for `dpkg-query`, `dpkg` and `sudo`) | as above |
+| `make check` | headless checks against `test/root`: the app list, each layout and status bar state as PNGs in `out/check`, the command lines Enter and O start, App info's Back / Remove / Update paths (`test/bin` stands in for `dpkg-query`, `dpkg` and `sudo`), the themes and the Theme page | as above |
 
 The desktop and headless builds read the device's paths under `EMUZERO_ROOT` (for example
 `EMUZERO_ROOT=test/root`), and fall back to the PC's own DejaVu fonts.
 
     out/headless/emuzero-launcher --keys right,right,enter --shot screen.png
 
-Other options: `--layout carousel|grid` picks the home screen layout; `--list` prints the apps the
-home screen would show (id, name, `icon` or `tile`) and exits.
+Other options: `--theme NAME` and `--layout carousel|grid` override the saved choice for one run;
+`--themes` lists the themes; `--list` prints the apps the home screen would show (id, name, `icon`
+or `tile`) and exits. On the device the log (`/tmp/emuzero-launcher.log`) gives the start-up time
+of each step up to the first frame.
 
 Key names for `--keys`: `up down left right enter esc del backspace tab home end space comma`, or a
 single character. On the device, `--kbd /dev/input/eventN` reads only that keyboard; by default every
@@ -50,7 +52,7 @@ is listed once (the earlier directory wins). Icons are PNG files (absolute, rela
 `/usr/share/APPLaunch` for APPLaunch entries, or a `hicolor` theme name), decoded and scaled once per
 size; an app without a readable icon gets a drawn tile with its first letter.
 
-Two layouts, chosen with `--layout` (later a setting and part of the theme):
+Two layouts; the theme names one, and the Theme page can choose either:
 
 - `carousel`: three framed cards, the selected one large in the middle, names under them, a
   position bar; Left/Right step through the apps and wrap around.
@@ -61,7 +63,21 @@ A layout is one file implementing `struct layout` (`src/layout.h`): build, show 
 where an arrow moves the selection. The home screen keeps the app list, the selection and the keys.
 
 Keys: arrows, or F / X / Z / C (they carry the arrow legends on the CardputerZero keyboard) move;
-Enter starts the app; O opens Options; I or Del opens App info. On a PC build Esc quits.
+Enter starts the app; O opens Options; T opens Theme; I or Del opens App info. On a PC build Esc
+quits.
+
+## Themes
+
+A theme is a folder with a `theme.conf`, in `~/.local/share/emuzero/themes/` or
+`/usr/share/emuzero/themes/`. It sets colours, fonts, the home layout, a wallpaper, how the cards
+look, where the status bar sits and how its badges look, and an optional window frame around the
+apps (border or 3-D bevel, title bar with stripes and a close box). A new theme needs no code:
+[themes/README.md](themes/README.md) lists every key. Two come with the launcher: `minimal` (the
+default) and `paper` (a sample: black on white, a grid in a striped window).
+
+The **Theme** tile (or T) opens a panel along the bottom: the theme, and the home layout (the
+theme's own, Carousel or Grid). Each change shows at once on the home screen above; Enter keeps it
+(in `~/.config/emuzero/settings`), Esc puts back what was there.
 
 ## Status bar
 
@@ -104,14 +120,16 @@ the same helper NimbleZero's Store uses.
 ## Source files
 
     src/main.c          arguments, LVGL start-up
-    src/ui.c            home screen: fonts, keys, layout switching, starting apps, screen timeout
+    src/ui.c            home screen: theme chrome, fonts, keys, starting apps, screen timeout
     src/statusbar.c     the status bar; src/status.c reads battery, Wi-Fi and USB
     src/appinfo.c       App info, Remove and Update
     src/sys.c           reading values from files, running NimbleZero's programs
     src/apps.c          desktop entry scanning
     src/icons.c         icon decoding, scaling and drawn tiles
     src/layout_*.c      the carousel and grid layouts
-    src/theme.h         colours and layout (one built-in theme for now)
+    src/theme.c         theme folders (theme.conf) and the launcher's settings file
+    src/themepage.c     the Theme page
+    themes/             the themes that come with the launcher, and the list of keys
     src/paths.c         EMUZERO_ROOT and font lookup
     src/plat_fbdev.c    device: /dev/fb0, our own evdev reader, running apps, screen off and panel
                         sleep; sleeps until a key or a timer is due
