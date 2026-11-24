@@ -9,6 +9,8 @@
 
 /* the picture drawn for the app: the theme's, else the app's (or emuZero's set), else NULL */
 const char *icon_file(const struct app *a);
+/* a colour as the theme's icon_colors draw it (unchanged without them) */
+uint32_t icon_recolor(uint32_t rgb);
 /* a size x size object showing the app's icon */
 lv_obj_t *icon_create(lv_obj_t *parent, const struct app *a, int size);
 /* a PNG picture covering w x h (wallpaper); stays valid until the next call; NULL if unreadable */

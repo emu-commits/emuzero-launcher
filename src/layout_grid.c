@@ -34,6 +34,11 @@ static void create(lv_obj_t *a)
 	lv_obj_set_style_bg_color(hilite, lv_color_hex(theme.sel_bg), 0);
 	lv_obj_set_style_border_width(hilite, 1, 0);
 	lv_obj_set_style_border_color(hilite, lv_color_hex(theme.accent), 0);
+	if (theme.glow) {
+		lv_obj_set_style_shadow_width(hilite, 10, 0);
+		lv_obj_set_style_shadow_color(hilite, lv_color_hex(theme.accent), 0);
+		lv_obj_set_style_shadow_opa(hilite, LV_OPA_70, 0);
+	}
 
 	page_box = lv_obj_create(area);
 	lv_obj_remove_style_all(page_box);

@@ -62,6 +62,11 @@ static void create(lv_obj_t *a)
 		lv_obj_set_style_bg_color(card[i], lv_color_hex(sel ? theme.card_sel_bg : theme.card_bg), 0);
 		lv_obj_set_style_border_width(card[i], slot[i].border, 0);
 		lv_obj_set_style_border_color(card[i], lv_color_hex(sel ? theme.card_sel_line : theme.card_line), 0);
+		if (theme.glow) {   /* the selected card lit in its frame colour, the others faintly */
+			lv_obj_set_style_shadow_width(card[i], sel ? 14 : 6, 0);
+			lv_obj_set_style_shadow_color(card[i], lv_color_hex(sel ? theme.card_sel_line : theme.card_line), 0);
+			lv_obj_set_style_shadow_opa(card[i], sel ? LV_OPA_80 : LV_OPA_40, 0);
+		}
 
 		lv_font_t *f = ui_font(sel ? 15 : 13, 1);
 		int nw = sel ? (DX + 6 < 112 ? DX + 6 : 112) : (DX - 22 < 84 ? DX - 22 : 84);

@@ -105,6 +105,7 @@ int ui_set_layout(const char *name)
 void ui_set_theme(const char *id) { force_theme = id; }
 
 struct ui_rect ui_page_rect(void) { return page_rect; }
+uint32_t ui_page_bg(void) { return theme.win ? theme.win_bg : theme.bg; }
 
 /* the layout: --layout, else the one chosen in Theme, else the theme's own */
 static const struct layout *pick_layout(void)
@@ -117,10 +118,11 @@ static const struct layout *pick_layout(void)
 
 /* raised: light along the top and left, shade along the bottom and right; sunken: the reverse.
  * Two nested borders, since an LVGL border has one colour. o must have no padding. */
-static void bevel(lv_obj_t *o, int style, int w)
+void ui_bevel(lv_obj_t *o, int style, int w)
 {
 	if (style == BEVEL_NONE || w <= 0) return;
 	uint32_t tl = style == BEVEL_RAISED ? theme.light : theme.shadow, br = style == BEVEL_RAISED ? theme.shadow : theme.light;
+	lv_obj_update_layout(o);   /* its size, below, may still be pending */
 	lv_obj_set_style_border_width(o, w, 0);
 	lv_obj_set_style_border_side(o, LV_BORDER_SIDE_TOP | LV_BORDER_SIDE_LEFT, 0);
 	lv_obj_set_style_border_color(o, lv_color_hex(tl), 0);
@@ -167,16 +169,35 @@ static void build(void)
 	struct ui_rect r = page_rect;
 	lv_obj_t *parent = scr;
 	if (theme.win) {
-		int m = theme.win_margin, b = theme.win_bevel ? 2 : theme.win_border;
-		lv_obj_t *w = box(scr, m, top + m, SCREEN_W - 2 * m, r.h - 2 * m, theme.win_bg);
-		if (theme.win_bevel) bevel(w, theme.win_bevel, 2);
+		int mx = theme.win_margin_x, my = theme.win_margin_y, b = theme.win_bevel ? 2 : theme.win_border;
+		lv_obj_t *w = box(scr, mx, top + my, SCREEN_W - 2 * mx, r.h - 2 * my, theme.win_bg);
+		if (theme.win_radius) {   /* rounded, and what lies inside cut to the same corners */
+			lv_obj_set_style_radius(w, theme.win_radius, 0);
+			lv_obj_set_style_clip_corner(w, true, 0);
+		}
+		if (theme.win_bevel) ui_bevel(w, theme.win_bevel, 2);
 		else if (b) { lv_obj_set_style_border_width(w, b, 0); lv_obj_set_style_border_color(w, lv_color_hex(theme.win_border_color), 0); }
-		int iw = SCREEN_W - 2 * m - 2 * b, ih = r.h - 2 * m - 2 * b, th = theme.win_title_h;
+		int iw = SCREEN_W - 2 * mx - 2 * b, ih = r.h - 2 * my - 2 * b, th = theme.win_title_h;
 		if (th) {
 			lv_obj_t *t = box(w, 0, 0, iw, th, theme.win_title_bg);
+			if (theme.win_title_grad != COLOR_UNSET) {
+				lv_obj_set_style_bg_grad_color(t, lv_color_hex(theme.win_title_grad), 0);
+				lv_obj_set_style_bg_grad_dir(t, theme.win_grad_hor ? LV_GRAD_DIR_HOR : LV_GRAD_DIR_VER, 0);
+			}
 			if (theme.win_stripes)   /* lines across the title bar, every other row */
 				for (int y = 2; y < th - 2; y += 2) box(t, 2, y, iw - 4, 1, theme.win_title_fg);
-			if (theme.win_close) {
+			if (theme.win_close == CLOSE_RIGHT && th >= 8) {   /* a button with a cross */
+				int s = th - 4;
+				lv_obj_t *c = box(t, iw - s - 2, 2, s, s, theme.close_bg);
+				if (theme.win_bevel) ui_bevel(c, BEVEL_RAISED, 1);
+				else {
+					lv_obj_set_style_radius(c, theme.win_radius ? 3 : 0, 0);
+					lv_obj_set_style_border_width(c, 1, 0);
+					lv_obj_set_style_border_color(c, lv_color_hex(theme.close_fg), 0);
+				}
+				lv_obj_t *x = ui_label(c, ui_font(s - 2 > 8 ? s - 2 : 8, 1), theme.close_fg, "\u00d7");
+				lv_obj_align(x, LV_ALIGN_CENTER, 0, -1);
+			} else if (theme.win_close == CLOSE_LEFT) {
 				lv_obj_t *c = box(t, 6, (th - 9) / 2, 9, 9, theme.win_title_bg);
 				lv_obj_set_style_border_width(c, 1, 0);
 				lv_obj_set_style_border_color(c, lv_color_hex(theme.win_title_fg), 0);

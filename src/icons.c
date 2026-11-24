@@ -12,6 +12,65 @@
 static struct { char path[512]; int size; lv_draw_buf_t *buf; } cache[CACHE_MAX];
 static int ncache;
 
+/* A theme's icon_colors: each colour replaced by a palette colour by its brightness.
+ * Brightness is stretched over the icon's own range first, so a pale icon still uses the dark
+ * colours. The lightest palette colour is kept for white and near white: it is often the
+ * screen's own colour, and a pale yellow folder must not vanish into it. */
+static int lum(int r, int g, int b) { return (r * 299 + g * 587 + b * 114) / 1000; }
+
+static int whitish(int r, int g, int b)
+{
+	int mx = r > g ? (r > b ? r : b) : (g > b ? g : b), mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+	return mn >= 210 && mx - mn <= 30;
+}
+
+static uint32_t palette_at(int l, int lo, int hi)   /* l in lo..hi, to all but the lightest */
+{
+	int n = theme.n_icon_colors - 1, k = hi > lo ? (l - lo) * n / (hi - lo + 1) : n - 1;
+	return theme.icon_colors[k < 0 ? 0 : k >= n ? n - 1 : k];
+}
+
+static uint32_t map_px(int r, int g, int b, int lo, int hi)
+{
+	return whitish(r, g, b) ? theme.icon_colors[theme.n_icon_colors - 1] : palette_at(lum(r, g, b), lo, hi);
+}
+
+uint32_t icon_recolor(uint32_t rgb)
+{
+	if (!theme.n_icon_colors) return rgb;
+	return map_px(rgb >> 16 & 0xff, rgb >> 8 & 0xff, rgb & 0xff, 0, 255);
+}
+
+static void recolor(lv_draw_buf_t *buf)
+{
+	if (!theme.n_icon_colors) return;
+	int w = buf->header.w, h = buf->header.h, lo = 255, hi = 0;
+	for (int pass = 0; pass < 2; pass++)
+		for (int y = 0; y < h; y++) {
+			uint8_t *p = buf->data + (size_t)y * buf->header.stride;
+			for (int x = 0; x < w; x++, p += 4) {
+				if (p[3] < 96) continue;   /* the faint edge goes with what it borders */
+				if (!pass) {
+					if (whitish(p[2], p[1], p[0])) continue;
+					int l = lum(p[2], p[1], p[0]);
+					if (l < lo) lo = l;
+					if (l > hi) hi = l;
+					continue;
+				}
+				uint32_t c = map_px(p[2], p[1], p[0], lo, hi);
+				p[0] = c & 0xff; p[1] = c >> 8 & 0xff; p[2] = c >> 16 & 0xff;
+			}
+		}
+	for (int y = 0; y < h; y++) {   /* edges: the colour of the nearest solid pixel's shade */
+		uint8_t *p = buf->data + (size_t)y * buf->header.stride;
+		for (int x = 0; x < w; x++, p += 4)
+			if (p[3] && p[3] < 96) {
+				uint32_t c = map_px(p[2], p[1], p[0], lo, hi);
+				p[0] = c & 0xff; p[1] = c >> 8 & 0xff; p[2] = c >> 16 & 0xff;
+			}
+	}
+}
+
 /* Decode a PNG and fit it into size x size (centred, aspect kept) as ARGB8888. Pixels are
  * averaged over the source area they cover, weighted by alpha so edges do not darken. */
 static lv_draw_buf_t *load_scaled(const char *path, int size)
@@ -49,6 +108,7 @@ static lv_draw_buf_t *load_scaled(const char *path, int size)
 		}
 	}
 	free(src);
+	recolor(buf);
 	return buf;
 }
 
@@ -117,7 +177,7 @@ static lv_obj_t *tile(lv_obj_t *parent, const struct app *a, int size)
 	lv_obj_set_size(t, size, size);
 	lv_obj_set_style_radius(t, size / 5, 0);
 	lv_obj_set_style_bg_opa(t, LV_OPA_COVER, 0);
-	lv_obj_set_style_bg_color(t, lv_color_hex(tile_color(a->id)), 0);
+	lv_obj_set_style_bg_color(t, lv_color_hex(icon_recolor(tile_color(a->id))), 0);
 	lv_obj_remove_flag(t, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
 	/* first letter (first UTF-8 character) of the name */
@@ -128,7 +188,7 @@ static lv_obj_t *tile(lv_obj_t *parent, const struct app *a, int size)
 	if (len == 1 && first[0] >= 'a' && first[0] <= 'z') first[0] -= 32;
 	lv_obj_t *l = lv_label_create(t);
 	lv_obj_set_style_text_font(l, ui_font(size * 11 / 20, 1), 0);
-	lv_obj_set_style_text_color(l, lv_color_hex(0xffffff), 0);
+	lv_obj_set_style_text_color(l, lv_color_hex(icon_recolor(0xffffff)), 0);
 	lv_label_set_text(l, first);
 	lv_obj_center(l);
 	return t;

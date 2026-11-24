@@ -14,7 +14,7 @@
 
 struct theme theme;
 
-#define UNSET 0xff000000u   /* a colour not given: derived from the main colours afterwards */
+#define UNSET COLOR_UNSET   /* a colour not given: derived from the main colours afterwards */
 
 static void defaults(struct theme *t)
 {
@@ -32,8 +32,10 @@ static void defaults(struct theme *t)
 	t->bar_bg = t->bar_fg = t->bar_line_color = t->title_fg = t->badge_bg = t->badge_fg = UNSET;
 	snprintf(t->title, sizeof(t->title), "emuZero");
 	t->badge_style = BADGE_ROUND;
-	t->win_margin = 4; t->win_border = 1; t->win_title_h = 14;
+	t->bar_grad = t->title_bg = t->title_grad = UNSET;
+	t->win_margin = 4; t->win_margin_x = t->win_margin_y = -1; t->win_border = 1; t->win_title_h = 14;
 	t->win_bg = t->win_border_color = t->win_title_bg = t->win_title_fg = UNSET;
+	t->win_title_grad = t->close_bg = t->close_fg = UNSET;
 }
 
 static void derive(struct theme *t)
@@ -45,6 +47,9 @@ static void derive(struct theme *t)
 	D(bar_bg, t->bg); D(bar_fg, t->fg); D(bar_line_color, t->line); D(title_fg, t->accent);
 	D(badge_bg, t->line); D(badge_fg, t->fg);
 	D(win_bg, t->bg); D(win_border_color, t->fg); D(win_title_bg, t->bg); D(win_title_fg, t->fg);
+	D(close_bg, t->win_title_bg); D(close_fg, t->win_title_fg);
+	if (t->win_margin_x < 0) t->win_margin_x = t->win_margin;
+	if (t->win_margin_y < 0) t->win_margin_y = t->win_margin;
 #undef D
 }
 
@@ -58,12 +63,24 @@ static char *trim(char *s)
 
 static int color(const char *v, uint32_t *out)
 {
+	if (!strcasecmp(v, "none")) { *out = COLOR_NONE; return 0; }
 	if (*v == '#') v++;
 	char *end;
 	unsigned long c = strtoul(v, &end, 16);
 	if (end - v != 6 || *end) return -1;
 	*out = (uint32_t)c;
 	return 0;
+}
+
+/* where a comment starts in a value: " #" not followed by a colour (lists hold several) */
+static char *comment(char *v)
+{
+	for (char *h = strstr(v, " #"); h; h = strstr(h + 1, " #")) {
+		int n = 0;
+		while (n < 6 && isxdigit((unsigned char)h[2 + n])) n++;
+		if (n < 6 || (h[8] && !isspace((unsigned char)h[8]) && h[8] != ',')) return h;
+	}
+	return NULL;
 }
 
 static int yes(const char *v)
@@ -110,6 +127,10 @@ static void set(struct theme *t, const char *sec, const char *k, const char *v, 
 		{ "bar", "title_color", &t->title_fg }, { "bar", "badge", &t->badge_bg }, { "bar", "badge_text", &t->badge_fg },
 		{ "window", "background", &t->win_bg }, { "window", "border_color", &t->win_border_color },
 		{ "window", "title_background", &t->win_title_bg }, { "window", "title_color", &t->win_title_fg },
+		{ "window", "title_gradient", &t->win_title_grad },
+		{ "window", "close_background", &t->close_bg }, { "window", "close_color", &t->close_fg },
+		{ "bar", "gradient", &t->bar_grad }, { "bar", "title_background", &t->title_bg },
+		{ "bar", "title_gradient", &t->title_grad },
 	};
 	struct { const char *sec, *key; int *i, lo, hi; } nums[] = {
 		{ "home", "card_radius", &t->card_radius, 0, 50 }, { "home", "card_border", &t->card_border, 0, 6 },
@@ -117,10 +138,12 @@ static void set(struct theme *t, const char *sec, const char *k, const char *v, 
 		{ "bar", "height", &t->bar_h, 0, 30 },
 		{ "window", "margin", &t->win_margin, 0, 20 }, { "window", "border", &t->win_border, 0, 4 },
 		{ "window", "title_height", &t->win_title_h, 0, 24 },
+		{ "window", "margin_x", &t->win_margin_x, 0, 40 }, { "window", "margin_y", &t->win_margin_y, 0, 40 },
+		{ "window", "radius", &t->win_radius, 0, 12 }, { "bar", "title_radius", &t->title_radius, 0, 15 },
 	};
 	struct { const char *sec, *key; int *b; } flags[] = {
 		{ "home", "chevrons", &t->chevrons }, { "home", "track", &t->track }, { "bar", "line", &t->bar_line },
-		{ "window", "show", &t->win }, { "window", "stripes", &t->win_stripes }, { "window", "close_box", &t->win_close },
+		{ "window", "show", &t->win }, { "window", "stripes", &t->win_stripes }, { "home", "glow", &t->glow },
 	};
 	for (size_t i = 0; i < sizeof(colors) / sizeof(colors[0]); i++)
 		if (!strcmp(sec, colors[i].sec) && !strcmp(k, colors[i].key)) {
@@ -143,6 +166,23 @@ static void set(struct theme *t, const char *sec, const char *k, const char *v, 
 	else if (!strcmp(sec, "window") && !strcmp(k, "title")) snprintf(t->win_title, sizeof(t->win_title), "%s", v);
 	else if (!strcmp(sec, "window") && !strcmp(k, "bevel"))
 		t->win_bevel = !strcmp(v, "raised") ? BEVEL_RAISED : !strcmp(v, "sunken") ? BEVEL_SUNKEN : BEVEL_NONE;
+	else if (!strcmp(sec, "bar") && !strcmp(k, "title_bevel"))
+		t->title_bevel = !strcmp(v, "raised") ? BEVEL_RAISED : !strcmp(v, "sunken") ? BEVEL_SUNKEN : BEVEL_NONE;
+	else if (!strcmp(sec, "window") && !strcmp(k, "close_box"))   /* yes = left, as on the first windows */
+		t->win_close = !strcmp(v, "right") ? CLOSE_RIGHT : !strcmp(v, "left") || yes(v) ? CLOSE_LEFT : CLOSE_NONE;
+	else if (!strcmp(sec, "window") && !strcmp(k, "title_gradient_direction"))
+		t->win_grad_hor = !strcmp(v, "horizontal");
+	else if (!strcmp(sec, "home") && !strcmp(k, "icon_colors")) {   /* "#000000 #555555 #aaaaaa #ffffff" */
+		char buf[200], *save, *w;
+		t->n_icon_colors = 0;
+		snprintf(buf, sizeof(buf), "%s", v);
+		for (w = strtok_r(buf, " ,", &save); w && t->n_icon_colors < 8; w = strtok_r(NULL, " ,", &save)) {
+			uint32_t c;
+			if (color(w, &c) || c == COLOR_NONE) { fprintf(stderr, "emuzero-launcher: theme %s line %d: %s is not a colour (#rrggbb)\n", t->id, line, w); continue; }
+			t->icon_colors[t->n_icon_colors++] = c;
+		}
+		if (t->n_icon_colors < 2) t->n_icon_colors = 0;
+	}
 	else fprintf(stderr, "emuzero-launcher: theme %s line %d: unknown key %s%s%s\n", t->id, line, sec, *sec ? "." : "", k);
 }
 
@@ -194,7 +234,7 @@ int theme_load(const char *id)
 			char *eq = strchr(s, '=');
 			if (!eq) continue;
 			*eq = 0;
-			char *v = trim(eq + 1), *hash = strstr(v, " #");   /* "accent = #4fa3ff  # blue" */
+			char *v = trim(eq + 1), *hash = comment(v);   /* "accent = #4fa3ff  # blue" */
 			if (hash) { *hash = 0; v = trim(v); }
 			set(&t, sec, trim(s), v, n);
 		}

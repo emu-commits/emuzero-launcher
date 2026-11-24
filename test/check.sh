@@ -8,7 +8,7 @@
 # 4. Enter and O start the right command lines (the headless build prints them)
 # 5. App info: Back is selected first, Remove asks with "No" selected, Update and Remove
 #    call nz-admin; dpkg-query, dpkg and sudo are the stand-ins in test/bin
-# 6. themes: the ones in themes/ (via test/root/usr/share/emuzero/themes), a user theme made
+# 6. themes: the ones in themes/ (each drawn, no line it cannot read) (via test/root/usr/share/emuzero/themes), a user theme made
 #    here with the chrome the others do not use and pictures of its own, and the Theme page
 #    (keep, cancel, saved file). emuZero's icons/ are linked in as /usr/share/emuzero/icons.
 set -e
@@ -82,10 +82,17 @@ admin info-local "" right,right,right,right,right,i                # /usr/local 
 
 # 6. themes
 "$bin" --themes > "$out/themes.txt"
-printf 'minimal\tMinimal\npaper\tPaper\n' | diff -u - "$out/themes.txt"
-echo "check: themes listed (minimal, paper)"
-shot paper-grid      --theme paper
-shot paper-carousel  --theme paper --layout carousel --keys right
+printf 'cyberdeck\tCyberdeck\ndesktop2001\tDesktop 2001\ndesktop95\tDesktop 95\nfieldindex\tField Index\nminimal\tMinimal\npaper\tPaper\nsuperhandheld\tSuper Handheld\n' | diff -u - "$out/themes.txt"
+echo "check: themes listed"
+for t in $(cut -f1 "$out/themes.txt"); do   # each shipped theme: both layouts, App info, no complaints
+	for l in carousel grid; do
+		"$bin" --theme "$t" --layout $l --keys right --shot "$out/theme-$t-$l.png" 2>"$out/theme-$t.err" >/dev/null
+		test -s "$out/theme-$t-$l.png"
+		grep "theme $t" "$out/theme-$t.err" && { echo "check: theme $t has lines that cannot be read"; exit 1; }
+	done
+	shot "theme-$t-info" --theme "$t" --keys right,i
+done
+echo "check: shipped themes draw, with every line read"
 u="$HOME/.local/share/emuzero/themes/testbar"; mkdir -p "$u"
 cp "$here/root/usr/share/APPLaunch/share/images/camera.png" "$u/wall.png"
 mkdir -p "$u/icons"; cp "$here/../icons/nz-snake.png" "$u/icons/snake.png"; cp "$here/../icons/nano.png" "$u/icons/nz-options.png"
@@ -110,10 +117,23 @@ title_height = 12
 background = #c0c0c0
 title_background = #000080
 title_color = #ffffff
+title_gradient = #1084d0   # a comment after a colour
+title_gradient_direction = horizontal
+close_box = right
+margin_x = 12
+radius = 4
 nonsense = 1
+[bar]
+background = none
+title_background = #c0c0c0
+title_bevel = raised
+[home]
+glow = yes
+icon_colors = #000000 #555555, #aaaaaa #ffffff
 EOF2
 "$bin" --theme testbar --shot "$out/testbar.png" 2>"$out/testbar.err" >/dev/null
 grep -q "unknown key window.nonsense" "$out/testbar.err" || { echo "check: an unknown key was not reported"; exit 1; }
+[ "$(grep -c "theme testbar" "$out/testbar.err")" = 1 ] || { echo "check: a good line was reported"; cat "$out/testbar.err"; exit 1; }
 "$bin" --theme testbar --list > "$out/testbar-apps.txt"
 grep -qx "snake	Snake	theme" "$out/testbar-apps.txt" && grep -qx "nz-options	Options	theme" "$out/testbar-apps.txt" \
 	|| { echo "check: the theme's own icons were not used"; grep -E "^(snake|nz-options)	" "$out/testbar-apps.txt"; exit 1; }
@@ -121,7 +141,7 @@ shot testbar-carousel --theme testbar
 shot testbar-grid     --theme testbar --layout grid --keys right
 shot testbar-info     --theme testbar --keys right,right,i
 "$bin" --theme nosuch --shot "$out/nosuch.png" 2>&1 >/dev/null | grep -q "theme nosuch not found" || { echo "check: a missing theme was not reported"; exit 1; }
-echo "check: user theme (bottom bar, bevel, wallpaper, mono font, own icons) and bad keys reported"
+echo "check: user theme (bottom bar, bevel, wallpaper, mono font, own icons, the other window and bar keys) and bad keys reported"
 
 # the Theme page: T, Right = next theme (paper), Enter keeps it; Esc puts the old one back
 rm -f "$HOME/.config/emuzero/settings"

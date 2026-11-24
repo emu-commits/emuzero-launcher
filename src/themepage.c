@@ -64,7 +64,7 @@ static void draw(void)
 	lv_obj_set_pos(panel, pr.x, pr.y + pr.h - h);
 	lv_obj_set_size(panel, pr.w, h);
 	lv_obj_set_style_bg_opa(panel, LV_OPA_COVER, 0);
-	lv_obj_set_style_bg_color(panel, lv_color_hex(theme.bg), 0);
+	lv_obj_set_style_bg_color(panel, lv_color_hex(ui_page_bg()), 0);
 	lv_obj_set_style_border_width(panel, 1, 0);
 	lv_obj_set_style_border_side(panel, LV_BORDER_SIDE_TOP, 0);
 	lv_obj_set_style_border_color(panel, lv_color_hex(theme.line), 0);

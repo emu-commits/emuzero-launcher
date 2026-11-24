@@ -9,6 +9,10 @@
 
 enum badge_style { BADGE_ROUND, BADGE_SQUARE, BADGE_PLAIN, BADGE_SUNKEN };
 enum bevel { BEVEL_NONE, BEVEL_RAISED, BEVEL_SUNKEN };
+enum close_box { CLOSE_NONE, CLOSE_LEFT, CLOSE_RIGHT };
+
+#define COLOR_UNSET 0xff000000u   /* a colour key not given */
+#define COLOR_NONE  0xfe000000u   /* "none": nothing drawn (where a key allows it) */
 
 struct theme {
 	char id[32], name[48];        /* folder name; name shown in the Theme page */
@@ -28,19 +32,26 @@ struct theme {
 	int card_radius;              /* per cent of a card's size */
 	int card_border, card_sel_border;
 	uint32_t card_bg, card_sel_bg, card_line, card_sel_line, name_fg, name_sel_fg;
+	int glow;                     /* a soft light around the selected card or cell */
+	uint32_t icon_colors[8];      /* icons drawn in these colours only, dark to light */
+	int n_icon_colors;            /* 0: icons keep their own colours */
 
 	/* [bar] status bar */
 	int bar_bottom, bar_h, bar_line;
 	uint32_t bar_bg, bar_fg, bar_line_color, title_fg;
+	uint32_t bar_grad;            /* second colour, top to bottom; UNSET: plain */
 	char title[32];
+	uint32_t title_bg, title_grad; /* the title as a button; UNSET: plain text */
+	int title_bevel, title_radius;
 	int badge_style;
 	uint32_t badge_bg, badge_fg;
 
 	/* [window] an optional window frame around the apps */
 	int win;                      /* 0: none */
 	char win_title[32];
-	int win_margin, win_border, win_bevel, win_title_h, win_stripes, win_close;
-	uint32_t win_bg, win_border_color, win_title_bg, win_title_fg;
+	int win_margin, win_margin_x, win_margin_y, win_border, win_bevel, win_title_h, win_stripes, win_close;
+	int win_radius, win_grad_hor;
+	uint32_t win_bg, win_border_color, win_title_bg, win_title_fg, win_title_grad, close_bg, close_fg;
 };
 
 extern struct theme theme;

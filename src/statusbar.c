@@ -44,7 +44,9 @@ static lv_obj_t *badge(lv_obj_t *parent, uint32_t fill, uint32_t text)
 }
 
 /* a bar in the screen's own colours uses the theme's dim and line; one of its own, a mix */
-static int plain_bar(void) { return theme.bar_bg == theme.bg && theme.bar_fg == theme.fg; }
+static int plain_bar(void) { return (theme.bar_bg == theme.bg || theme.bar_bg == COLOR_NONE) && theme.bar_fg == theme.fg; }
+/* the colour under the bar's text: its own, or the screen's when it has none */
+static uint32_t bar_under(void) { return theme.bar_bg == COLOR_NONE ? theme.bg : theme.bar_bg; }
 
 static void show(lv_obj_t *o, int on)
 {
@@ -85,7 +87,7 @@ void statusbar_update(void)
 	}
 	if (s.wifi != shown.wifi) {
 		show(wifi, s.wifi >= 0);
-		lv_color_t lit = lv_color_hex(theme.bar_fg), dark = plain_bar() ? lv_color_hex(theme.line) : lv_color_mix(lit, lv_color_hex(theme.bar_bg), LV_OPA_30);
+		lv_color_t lit = lv_color_hex(theme.bar_fg), dark = plain_bar() ? lv_color_hex(theme.line) : lv_color_mix(lit, lv_color_hex(bar_under()), LV_OPA_30);
 		for (int i = 0; i < 4; i++) lv_obj_set_style_bg_color(bars[i], i < s.wifi ? lit : dark, 0);
 	}
 	if (s.usb != shown.usb) show(usb, s.usb);
@@ -114,10 +116,36 @@ void statusbar_create(lv_obj_t *scr)
 	lv_obj_remove_flag(bar, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 	lv_obj_set_pos(bar, 0, y);
 	lv_obj_set_size(bar, SCREEN_W, h);
-	lv_obj_set_style_bg_opa(bar, LV_OPA_COVER, 0);
-	lv_obj_set_style_bg_color(bar, lv_color_hex(theme.bar_bg), 0);
+	if (theme.bar_bg != COLOR_NONE) {   /* none: the wallpaper shows through */
+		lv_obj_set_style_bg_opa(bar, LV_OPA_COVER, 0);
+		lv_obj_set_style_bg_color(bar, lv_color_hex(theme.bar_bg), 0);
+		if (theme.bar_grad != COLOR_UNSET) {
+			lv_obj_set_style_bg_grad_color(bar, lv_color_hex(theme.bar_grad), 0);
+			lv_obj_set_style_bg_grad_dir(bar, LV_GRAD_DIR_VER, 0);
+		}
+	}
 
-	if (theme.title[0]) {
+	if (theme.title[0] && theme.title_bg != COLOR_UNSET) {   /* a button at the left, as a start button */
+		lv_font_t *f = ui_font(12, 1);
+		int bw = lv_text_get_width(theme.title, strlen(theme.title), f, 0) + 14, bh = h - 4;
+		lv_obj_t *btn = lv_obj_create(bar);
+		lv_obj_remove_style_all(btn);
+		lv_obj_remove_flag(btn, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+		lv_obj_set_pos(btn, 2, 2);
+		lv_obj_set_size(btn, bw, bh);
+		if (theme.title_bg != COLOR_NONE) {
+			lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
+			lv_obj_set_style_bg_color(btn, lv_color_hex(theme.title_bg), 0);
+		}
+		if (theme.title_grad != COLOR_UNSET) {
+			lv_obj_set_style_bg_grad_color(btn, lv_color_hex(theme.title_grad), 0);
+			lv_obj_set_style_bg_grad_dir(btn, LV_GRAD_DIR_VER, 0);
+		}
+		lv_obj_set_style_radius(btn, theme.title_radius, 0);
+		ui_bevel(btn, theme.title_bevel, 1);
+		lv_obj_t *name = ui_label(btn, f, theme.title_fg, theme.title);
+		lv_obj_align(name, LV_ALIGN_CENTER, 0, 0);
+	} else if (theme.title[0]) {
 		lv_obj_t *name = ui_label(bar, ui_font(12, 1), theme.title_fg, theme.title);
 		lv_obj_align(name, LV_ALIGN_LEFT_MID, 6, 0);
 	}
@@ -131,7 +159,7 @@ void statusbar_create(lv_obj_t *scr)
 	lv_obj_set_style_pad_column(row, 5, 0);
 	lv_obj_align(row, LV_ALIGN_RIGHT_MID, -3, 0);
 
-	uint32_t dim = plain_bar() ? theme.dim : lv_color_to_u32(lv_color_mix(lv_color_hex(theme.bar_fg), lv_color_hex(theme.bar_bg), LV_OPA_60)) & 0xffffff;
+	uint32_t dim = plain_bar() ? theme.dim : lv_color_to_u32(lv_color_mix(lv_color_hex(theme.bar_fg), lv_color_hex(bar_under()), LV_OPA_60)) & 0xffffff;
 	usb = ui_label(row, ui_font(10, 1), dim, "USB");
 	lv_obj_set_style_border_width(usb, 1, 0);
 	lv_obj_set_style_border_color(usb, lv_color_hex(dim), 0);

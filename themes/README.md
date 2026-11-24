@@ -19,7 +19,7 @@ left out keeps the value from Minimal. A line that can't be read is reported in
 
 ## Keys
 
-Colours are written `#rrggbb`. Yes/no keys take `yes`, `no`, `on`, `off`, `true`, `false`, `1` or `0`.
+Colours are written `#rrggbb`; where the table says so, `none` draws nothing there. Yes/no keys take `yes`, `no`, `on`, `off`, `true`, `false`, `1` or `0`.
 
 | Section | Key | Meaning | Minimal |
 |---|---|---|---|
@@ -41,25 +41,34 @@ Colours are written `#rrggbb`. Yes/no keys take `yes`, `no`, `on`, `off`, `true`
 | | `card_radius` | corner rounding, per cent of the card (0 = square) | 20 |
 | | `name` | app names | = dim |
 | | `name_selected` | the selected app's name under the carousel (in the grid it sits on `selected` and uses `selected_text`) | = text |
+| | `glow` | a soft light around the selected card (in `card_selected_line`) or grid cell (in `accent`) | no |
+| | `icon_colors` | 2 to 8 colours, dark to light: every icon is drawn in these only, by brightness; the lightest is kept for white parts | none (own colours) |
 | | `chevrons` | ‹ › at the sides of the carousel | yes |
 | | `track` | position bar under the carousel | yes |
 | `[bar]` | `position` | `top` or `bottom` | top |
 | | `height` | 0–30; 0 = no status bar | 18 |
-| | `background`, `text` | bar colours | = background, text |
-| | `title`, `title_color` | text on the left | emuZero, = accent |
+| | `background`, `text` | bar colours; `background = none` lets the wallpaper show | = background, text |
+| | `gradient` | a second bar colour, fading top to bottom | none |
+| | `title`, `title_color` | text on the left (`title =` for none) | emuZero, = accent |
+| | `title_background` | draws the title as a button, like a start button (`none`: a frame only) | none |
+| | `title_gradient`, `title_radius`, `title_bevel` | the button's second colour (top to bottom), corner rounding 0–15, `raised` or `sunken` | none, 0, none |
 | | `badges` | clock and battery: `round`, `square`, `plain` (text only) or `sunken` | round |
 | | `badge`, `badge_text` | clock badge colours | = line, text |
 | | `line`, `line_color` | a line between the bar and the apps | yes, = line |
 | `[window]` | `show` | draw the apps inside a window | no |
 | | `title` | window title | none |
 | | `margin` | space around the window, 0–20 | 4 |
+| | `margin_x`, `margin_y` | the same at the sides / top and bottom, 0–40 | = margin |
+| | `radius` | corner rounding, 0–12 | 0 |
 | | `border` | frame width, 0–4 | 1 |
 | | `bevel` | `raised` or `sunken` 3-D frame instead of `border` (uses light/shadow) | none |
 | | `title_height` | title bar height, 0–24 (0 = none) | 14 |
 | | `stripes` | lines across the title bar, title centred | no |
-| | `close_box` | a small box at the left of the title bar | no |
-| | `background`, `border_color` | window colours | = background, text |
+| | `close_box` | `left` (or `yes`): a small box at the left of the title bar; `right`: a button with a cross at the right | no |
+| | `close_background`, `close_color` | the right-hand button's fill and cross | = title_background, title_color |
+| | `background`, `border_color` | window colours (App info and the Theme page use `background` and the main text colours too) | = background, text |
 | | `title_background`, `title_color` | title bar colours | = background, text |
+| | `title_gradient`, `title_gradient_direction` | a second title bar colour, `vertical` (top to bottom) or `horizontal` (left to right) | none, vertical |
 
 The battery badge keeps its own colours (green, yellow at 35 % and below, red at 15 % and
 below). With `badges = plain` those colours go to the text.
@@ -78,3 +87,17 @@ down to the size each layout draws.
 - **minimal**: the default. Dark, with rounded cards in a carousel.
 - **paper**: a sample showing what a folder alone can change: black on white, square corners,
   a grid inside a window with a striped title bar.
+- **desktop95**: the grey 3-D desktop of the mid-90s: teal, a navy title bar, a Start button
+  and a sunken clock on a grey taskbar.
+- **desktop2001**: the glossy blue desktop of the early 2000s: sky and a green hill, a rounded
+  window with a blue title bar and a red close button, a green start button.
+- **superhandheld**: a handheld game on a TV, inside a console border: four colours on a cream
+  screen, the icons drawn in the same four.
+- **fieldindex**: a red pocket field guide: a big blue lens and three lamps on the lid, a hinge,
+  a mint screen in a grey bezel.
+- **cyberdeck**: neon on black: a night city over a glowing floor grid, scanlines, frames that
+  light up, icons in magenta and cyan.
+
+The wallpapers are drawn by `tools/draw-wallpapers.py` (`python3 tools/draw-wallpapers.py
+themes`); they are our own drawings, and the themes use no fonts, logos or names of the
+products they call to mind.

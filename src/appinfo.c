@@ -126,7 +126,7 @@ static void draw_buttons(void)
 		lv_obj_set_style_border_width(b, i == cur ? 2 : 1, 0);
 		lv_obj_set_style_border_color(b, lv_color_hex(i == cur ? theme.accent : theme.line), 0);
 		lv_obj_set_style_bg_opa(b, LV_OPA_COVER, 0);
-		lv_obj_set_style_bg_color(b, lv_color_hex(i == cur ? theme.sel_bg : theme.bg), 0);
+		lv_obj_set_style_bg_color(b, lv_color_hex(i == cur ? theme.sel_bg : ui_page_bg()), 0);
 	}
 }
 
@@ -284,7 +284,7 @@ void appinfo_open(lv_obj_t *scr, const struct app *a, void (*done)(int changed))
 	lv_obj_set_pos(panel, r.x, r.y);
 	lv_obj_set_size(panel, r.w, r.h);
 	lv_obj_set_style_bg_opa(panel, LV_OPA_COVER, 0);
-	lv_obj_set_style_bg_color(panel, lv_color_hex(theme.bg), 0);
+	lv_obj_set_style_bg_color(panel, lv_color_hex(ui_page_bg()), 0);
 	find_package();
 	fprintf(stderr, "emuzero-launcher: app info %s (package %s%s)\n", app.id, pkg[0] ? pkg : "none", removable ? ", removable" : "");
 	info_page();
