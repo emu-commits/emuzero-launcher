@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Power off
+Comment=Shut the system down
+Exec=poweroff
+Terminal=true

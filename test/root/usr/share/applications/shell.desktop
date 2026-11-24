@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Comment=Login shell
+Exec=/bin/sh -l
+Terminal=true

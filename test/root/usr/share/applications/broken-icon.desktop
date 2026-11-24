@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Broken icon
+Comment=Icon file is missing: drawn tile
+Exec=broken
+Icon=/usr/share/pixmaps/nothing.png

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Network info
+Comment=Addresses, routes, ping
+Exec=netinfo
+Terminal=true

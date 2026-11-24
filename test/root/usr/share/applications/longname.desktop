@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=A very long application name that does not fit
+Comment=Names are cut with dots, never wrapped onto the next app
+Exec=long

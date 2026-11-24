@@ -24,8 +24,9 @@ PLAT_ID  := EMUZERO_FBDEV
 PLAT_LIBS:=
 else ifeq ($(PLATFORM),sdl)
 PLAT_ID  := EMUZERO_SDL
-SDL2_CFLAGS ?= $(shell $(PKG_CONFIG) --cflags sdl2 2>/dev/null)
-SDL2_LIBS   ?= $(shell $(PKG_CONFIG) --libs sdl2 2>/dev/null)
+# pkg-config first; sdl2-config when that pkg-config does not see the system's SDL2 (Homebrew's)
+SDL2_CFLAGS ?= $(shell $(PKG_CONFIG) --cflags sdl2 2>/dev/null || sdl2-config --cflags 2>/dev/null)
+SDL2_LIBS   ?= $(shell $(PKG_CONFIG) --libs sdl2 2>/dev/null || sdl2-config --libs 2>/dev/null)
 ifeq ($(strip $(SDL2_LIBS)),)
 $(error SDL2 development files not found: install them (Ubuntu: sudo apt install libsdl2-dev; Homebrew: brew install sdl2), or pass SDL2_CFLAGS and SDL2_LIBS)
 endif
@@ -43,7 +44,8 @@ DEPS_LIBS   := $(shell $(PKG_CONFIG) --libs freetype2 libpng) -lm
 ALL_CFLAGS  := $(CFLAGS) -DEMUZERO_PLATFORM=$(PLAT_ID) -DLV_CONF_INCLUDE_SIMPLE -Isrc -I$(LVGL_PARENT) \
                $(DEPS_CFLAGS) $(PLAT_CFLAGS)
 
-SRC := src/main.c src/ui.c src/paths.c src/plat_$(PLATFORM).c
+SRC := src/main.c src/ui.c src/apps.c src/icons.c src/layout_carousel.c src/layout_grid.c src/paths.c \
+       src/plat_$(PLATFORM).c
 OBJ := $(patsubst src/%.c,$(OUT)/%.o,$(SRC))
 LV_SRC := $(shell find $(LVGL)/src -name '*.c' 2>/dev/null)
 LV_OBJ := $(patsubst $(LVGL)/src/%.c,$(OUT)/lv/%.o,$(LV_SRC))
@@ -61,7 +63,7 @@ $(OUT)/lv/%.o: $(LVGL)/src/%.c src/lv_conf.h | $(LVGL)/lvgl.h
 $(OUT)/liblvgl.a: $(LV_OBJ)
 	@echo "  AR $@"; $(AR) rcs $@ $^
 
-$(OUT)/main.o $(OUT)/ui.o: VFLAGS := -DEMUZERO_VERSION='"$(VERSION)"'
+$(OUT)/main.o: VFLAGS := -DEMUZERO_VERSION='"$(VERSION)"'
 $(OUT)/%.o: src/%.c src/*.h src/lv_conf.h | $(LVGL)/lvgl.h
 	@mkdir -p $(dir $@)
 	$(CC) $(ALL_CFLAGS) $(VFLAGS) -Wall -Wextra -c $< -o $@
@@ -83,11 +85,9 @@ desktop:
 headless:
 	$(MAKE) PLATFORM=headless CFLAGS="-O2 -g"
 
-# headless smoke test: starts, takes keys, writes a non-empty PNG
+# headless checks against the apps in test/root: each layout after a key script, as PNGs
 check: headless
-	@mkdir -p out/check
-	EMUZERO_ROOT=$(CURDIR)/test/root out/headless/emuzero-launcher --keys right,a --shot out/check/smoke.png
-	@test -s out/check/smoke.png && echo "check: out/check/smoke.png written"
+	@test/check.sh out/headless/emuzero-launcher out/check
 
 clean:
 	rm -rf out

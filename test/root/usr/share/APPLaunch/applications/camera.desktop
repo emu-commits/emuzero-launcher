@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Camera
+Comment=Take pictures
+Exec=/usr/bin/camera
+Icon=share/images/camera.png

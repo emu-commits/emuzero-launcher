@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Back to M5 only
+Exec=back
+Icon=share/images/files.png
+OnlyShowIn=APPLaunch;

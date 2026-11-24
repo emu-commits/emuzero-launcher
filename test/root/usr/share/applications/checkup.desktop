@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Diagnostics
+Comment=Hardware checks
+Exec=checkup

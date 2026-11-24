@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Music tracker
+Comment=Wide icon, kept in proportion
+Exec=tracker
+Icon=share/images/tracker.png

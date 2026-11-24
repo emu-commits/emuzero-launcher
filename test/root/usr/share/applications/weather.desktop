@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Weather
+Comment=Has a desktop action
+Exec=weather
+
+[Desktop Action today]
+Name=Zzz should not show
+Exec=weather --today

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Editor
+Comment=Edit text files
+Exec=vi
+Terminal=true

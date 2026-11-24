@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Tide tables
+Comment=Icon from the hicolor theme
+Exec=tide
+Icon=tide

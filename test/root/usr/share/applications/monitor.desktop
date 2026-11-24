@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=System monitor
+Comment=Processes and memory
+Exec=top
+Terminal=true

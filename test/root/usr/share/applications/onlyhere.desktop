@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Only in emuZero
+Comment=OnlyShowIn names emuZero
+Exec=onlyhere
+OnlyShowIn=GNOME;emuZero;

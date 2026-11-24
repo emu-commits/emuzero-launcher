@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=No display app
+Exec=x
+NoDisplay=true

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Keyboard guide
+Comment=Icon named but not installed
+Exec=keys
+Icon=share/images/Keyboard.png

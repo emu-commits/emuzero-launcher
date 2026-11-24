@@ -1,0 +1,19 @@
+longname	A very long application name that does not fit	tile
+broken-icon	Broken icon	tile
+camera	Camera	icon
+checkup	Diagnostics	tile
+eclair	Éclair	tile
+editor	Editor (local)	tile
+files	Files	icon
+keys	Keyboard guide	tile
+tracker	Music tracker	icon
+netinfo	Network info	tile
+onlyhere	Only in emuZero	tile
+settings	Options	tile
+poweroff	Power off	tile
+snake	Snake	tile
+monitor	System monitor	tile
+shell	Terminal	tile
+tide	Tide tables	icon
+weather	Weather	tile
+wifi	Wi-Fi setup	tile

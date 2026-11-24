@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Editor (local)
+Comment=Same id in /usr/local wins
+Exec=vi
+Terminal=true

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Wi-Fi setup
+Comment=Scan and join a network
+Exec=wifi
+Terminal=true

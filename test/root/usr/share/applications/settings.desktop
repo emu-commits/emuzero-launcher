@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Options
+Comment=Screen, Wi-Fi, time zone
+Exec=settings
+Terminal=true
