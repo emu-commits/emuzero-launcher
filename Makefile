@@ -44,7 +44,8 @@ DEPS_LIBS   := $(shell $(PKG_CONFIG) --libs freetype2 libpng) -lm
 ALL_CFLAGS  := $(CFLAGS) -DEMUZERO_PLATFORM=$(PLAT_ID) -DLV_CONF_INCLUDE_SIMPLE -Isrc -I$(LVGL_PARENT) \
                $(DEPS_CFLAGS) $(PLAT_CFLAGS)
 
-SRC := src/main.c src/ui.c src/apps.c src/icons.c src/layout_carousel.c src/layout_grid.c src/paths.c \
+SRC := src/main.c src/ui.c src/statusbar.c src/status.c src/appinfo.c src/sys.c src/apps.c src/icons.c \
+       src/layout_carousel.c src/layout_grid.c src/paths.c \
        src/plat_$(PLATFORM).c
 OBJ := $(patsubst src/%.c,$(OUT)/%.o,$(SRC))
 LV_SRC := $(shell find $(LVGL)/src -name '*.c' 2>/dev/null)

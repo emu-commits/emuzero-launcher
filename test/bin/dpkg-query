@@ -1,0 +1,30 @@
+#!/bin/sh
+# Stand-in for dpkg-query in the headless checks: a few packages that own the test entries.
+#   camera       camera.desktop (index has a newer version)
+#   m5-files     files.desktop and keys.desktop (removing one removes both)
+#   nz-firmware  NimbleZero's own entries, held (part of the system)
+# Everything else (tracker, /usr/local) belongs to no package.
+A=/usr/share/APPLaunch/applications
+case "$1" in
+-S)
+	case "$2" in
+	$A/camera.desktop) echo "camera: $2" ;;
+	$A/files.desktop|$A/keys.desktop) echo "m5-files: $2" ;;
+	/usr/share/applications/*) echo "nz-firmware: $2" ;;
+	*) echo "dpkg-query: no path found matching pattern $2" >&2; exit 1 ;;
+	esac ;;
+-W)
+	case "$3" in
+	camera) printf '1.0.4-m5stack1\t3161\tii ' ;;
+	m5-files) printf '1.2.0\t812\tii ' ;;
+	nz-firmware) printf '0.1.0\t\thi ' ;;
+	*) echo "dpkg-query: no packages found matching $3" >&2; exit 1 ;;
+	esac ;;
+-L)
+	case "$2" in
+	camera) printf '/.\n/usr/bin/camera\n%s/camera.desktop\n' $A ;;
+	m5-files) printf '/.\n%s/files.desktop\n%s/keys.desktop\n/usr/share/APPLaunch/bin/files\n' $A $A ;;
+	*) exit 1 ;;
+	esac ;;
+*) exit 2 ;;
+esac

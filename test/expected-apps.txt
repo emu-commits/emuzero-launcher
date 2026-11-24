@@ -9,7 +9,7 @@ keys	Keyboard guide	tile
 tracker	Music tracker	icon
 netinfo	Network info	tile
 onlyhere	Only in emuZero	tile
-settings	Options	tile
+nz-options	Options	tile
 poweroff	Power off	tile
 snake	Snake	tile
 monitor	System monitor	tile

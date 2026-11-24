@@ -96,3 +96,15 @@ int plat_run(const struct plat_opts *o)
 	lv_refr_now(NULL);
 	return o->shot ? write_png(o->shot) : 0;
 }
+
+uint32_t plat_exec_end;
+
+int plat_exec(const struct plat_app *a)
+{
+	printf("launch: %s%s\n", a->exec, a->terminal ? " (terminal)" : "");
+	fflush(stdout);
+	plat_exec_end = lv_tick_get();
+	return 0;
+}
+
+void plat_sleep(void) {}

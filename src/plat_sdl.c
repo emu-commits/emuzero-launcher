@@ -2,6 +2,7 @@
 // Desktop build: the same 320x170 screen in an SDL2 window (scaled by --zoom), keys from the
 // PC keyboard. Arrows, Enter and Esc map to the keys the device sends.
 #include "platform.h"
+#include <stdio.h>
 #include <unistd.h>
 
 static int quit;
@@ -35,3 +36,15 @@ int plat_run(const struct plat_opts *o)
 	lv_sdl_quit();
 	return 0;
 }
+
+uint32_t plat_exec_end;
+
+int plat_exec(const struct plat_app *a)
+{
+	printf("launch: %s%s\n", a->exec, a->terminal ? " (terminal)" : "");
+	fflush(stdout);
+	plat_exec_end = lv_tick_get();
+	return 0;
+}
+
+void plat_sleep(void) {}

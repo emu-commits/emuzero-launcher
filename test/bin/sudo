@@ -1,0 +1,9 @@
+#!/bin/sh
+# Stand-in for sudo in the headless checks: logs the command, then acts as nz-admin would.
+echo "$*" >> "${EMUZERO_FAKE_LOG:-/dev/null}"
+[ "$1" = -n ] && [ "$2" = /usr/sbin/nz-admin ] && [ "$3" = store ] || exit 1
+case "$4 $5" in
+"remove camera"|"remove m5-files") echo "Removing $5..."; echo "$5 removed." ;;
+"install camera") echo "Installing..."; echo "camera 1.0.5 installed." ;;
+*) echo "Store: $5 was not removed" >&2; exit 1 ;;
+esac

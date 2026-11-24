@@ -64,14 +64,30 @@ static void find_icon(struct app *a, const char *icon, const char *base)
 	if (readable(p)) snprintf(a->icon, sizeof(a->icon), "%s", p);
 }
 
-static int known(const char *id)
+int apps_find(const char *id)
 {
 	for (int i = 0; i < napps; i++)
-		if (!strcmp(apps[i].id, id)) return 1;
-	return 0;
+		if (!strcmp(apps[i].id, id)) return i;
+	return -1;
 }
 
-static void read_entry(const char *file, const char *id, const char *base)
+static int known(const char *id) { return apps_find(id) >= 0; }
+
+/* Exec= field codes (%f %F %u %U %i %c %k) stand for things a launcher passes in; we pass
+ * none, so they go. "%%" is a literal percent sign. */
+static void strip_field_codes(char *s)
+{
+	char *o = s;
+	for (const char *p = s; *p; p++) {
+		if (*p != '%') { *o++ = *p; continue; }
+		if (p[1] == '%') { *o++ = '%'; p++; }
+		else if (p[1]) p++;
+	}
+	while (o > s && o[-1] == ' ') o--;
+	*o = 0;
+}
+
+static void read_entry(const char *file, const char devfile[320], const char *id, const char *base)
 {
 	FILE *f = fopen(file, "r");
 	if (!f) return;
@@ -79,6 +95,7 @@ static void read_entry(const char *file, const char *id, const char *base)
 	char line[768], icon[512] = "";
 	int in_entry = 0, hidden = 0, is_app = 1;
 	snprintf(a.id, sizeof(a.id), "%s", id);
+	snprintf(a.file, sizeof(a.file), "%.319s", devfile);
 	while (fgets(line, sizeof(line), f)) {
 		line[strcspn(line, "\r\n")] = 0;
 		if (line[0] == '[') { in_entry = !strcmp(line, "[Desktop Entry]"); continue; }
@@ -91,6 +108,7 @@ static void read_entry(const char *file, const char *id, const char *base)
 		else if (!strcmp(k, "Comment")) snprintf(a.comment, sizeof(a.comment), "%s", v);
 		else if (!strcmp(k, "Exec")) snprintf(a.exec, sizeof(a.exec), "%s", v);
 		else if (!strcmp(k, "Icon")) snprintf(icon, sizeof(icon), "%s", v);
+		else if (!strcmp(k, "Path")) snprintf(a.path, sizeof(a.path), "%s", v);
 		else if (!strcmp(k, "Terminal")) a.terminal = !strcmp(v, "true");
 		else if (!strcmp(k, "Type")) is_app = !strcmp(v, "Application");
 		else if ((!strcmp(k, "Hidden") || !strcmp(k, "NoDisplay")) && !strcmp(v, "true")) hidden = 1;
@@ -98,6 +116,7 @@ static void read_entry(const char *file, const char *id, const char *base)
 		else if (!strcmp(k, "NotShowIn") && list_has(v, "emuZero")) hidden = 1;
 	}
 	fclose(f);
+	strip_field_codes(a.exec);
 	if (hidden || !is_app || !a.name[0] || !a.exec[0]) return;
 	find_icon(&a, icon, base);
 	apps[napps++] = a;
@@ -142,10 +161,11 @@ int apps_scan(void)
 		int n = scandir(dir, &list, is_desktop, alphasort);
 		if (n < 0) continue;
 		for (int i = 0; i < n; i++) {
-			char file[1024], id[64];
+			char file[1024], devfile[320], id[64];
 			snprintf(id, sizeof(id), "%.*s", (int)strlen(list[i]->d_name) - 8, list[i]->d_name);
 			snprintf(file, sizeof(file), "%s/%s", dir, list[i]->d_name);
-			if (napps < APPS_MAX && !known(id)) read_entry(file, id, sources[s].icon_base);
+			snprintf(devfile, sizeof(devfile), "%s/%s", sources[s].dir, list[i]->d_name);
+			if (napps < APPS_MAX && !known(id)) read_entry(file, devfile, id, sources[s].icon_base);
 			free(list[i]);
 		}
 		free(list);

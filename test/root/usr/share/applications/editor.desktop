@@ -2,5 +2,5 @@
 Type=Application
 Name=Editor
 Comment=Edit text files
-Exec=vi
+Exec=vi %F
 Terminal=true

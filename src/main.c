@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // emuZero launcher: a thin front end for NimbleZero.
 //
-//   emuzero-launcher [--kbd /dev/input/eventN]           device
+//   emuzero-launcher [--kbd /dev/input/eventN]           device (default: every keyboard)
 //   emuzero-launcher [--zoom N]                          desktop window
 //   emuzero-launcher --keys right,enter --shot out.png   headless
 //   --layout carousel|grid picks the home screen layout (later a setting of the theme)
@@ -31,7 +31,7 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
-	struct plat_opts o = { .kbd = "/dev/input/by-path/platform-3f804000.i2c-event", .zoom = 3 };
+	struct plat_opts o = { .zoom = 3 };
 	for (int i = 1; i < argc; i++) {
 		const char *a = argv[i], *v = i + 1 < argc ? argv[i + 1] : NULL;
 		if (!strcmp(a, "--version")) { printf("emuzero-launcher %s (%s)\n", EMUZERO_VERSION, plat_name()); return 0; }

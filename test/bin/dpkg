@@ -1,0 +1,4 @@
+#!/bin/sh
+# Stand-in for "dpkg --compare-versions A gt B" in the headless checks.
+[ "$1" = --compare-versions ] && [ "$3" = gt ] || exit 2
+[ "$2" != "$4" ] && [ "$(printf '%s\n%s\n' "$2" "$4" | sort -V | tail -n1)" = "$2" ]

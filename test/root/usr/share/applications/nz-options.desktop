@@ -2,5 +2,5 @@
 Type=Application
 Name=Options
 Comment=Screen, Wi-Fi, time zone
-Exec=settings
+Exec=nz-options
 Terminal=true
