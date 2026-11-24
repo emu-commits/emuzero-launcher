@@ -395,6 +395,11 @@ int plat_exec(const struct plat_app *a)
 		console_text();
 		if (write(1, "\033[2J\033[H\033[?25h", 13) < 0) {}
 	}
+	/* Keys pressed on the home screen also reach the console as text, the Enter that chose
+	 * this app among them; drop them, or an app that reads a line (Network info's "Press
+	 * Enter") takes that Enter and ends at once. The keyboard hands the Enter to the console
+	 * a moment after we see it, so wait for it first. */
+	if (tty >= 0) { usleep(30000); tcflush(tty, TCIFLUSH); }
 	pid_t pid = fork();
 	if (pid < 0) { if (tty >= 0) ioctl(tty, KDSETMODE, KD_GRAPHICS); return -1; }
 	if (pid == 0) {
