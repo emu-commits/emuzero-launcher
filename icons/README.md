@@ -22,6 +22,7 @@ whose notice is below.
 | `camera_app.png` | `camera_100.png` | Camera (when its own picture is missing) |
 | `files.png` | `file_100.png` | Files (when its own picture is missing) |
 | `keyboard-guide.png` | `Keyboard.png` | Keyboard Guide (its picture comes with M5's launcher, so it is missing without it) |
+| `calculator.png` | `math_100.png` | Calculator (M5's launcher shows its Calculator with this picture; the tile is `apps/calculator.desktop`) |
 
 ```
 MIT License

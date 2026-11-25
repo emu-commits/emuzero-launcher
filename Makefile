@@ -98,6 +98,7 @@ install: $(BIN) $(NOTES_BIN)
 	install -D -m 0755 apps/notes/nz-clip $(DESTDIR)$(PREFIX)/bin/nz-clip
 	install -D -m 0644 apps/notes/guide.md $(DESTDIR)$(PREFIX)/share/emuzero/notes/guide.md
 	install -D -m 0644 apps/notes/emuzero-notes.desktop $(DESTDIR)$(PREFIX)/share/applications/emuzero-notes.desktop
+	install -D -m 0644 apps/calculator.desktop $(DESTDIR)$(PREFIX)/share/applications/calculator.desktop
 
 # ---- convenience targets ----
 BR ?= $(HOME)/cardputerzero-os/NimbleZero/out/compat

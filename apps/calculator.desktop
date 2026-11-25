@@ -1,0 +1,10 @@
+# The Calculator of M5Stack's launcher (APPLaunch). APPLaunch shows it as a built-in tile with
+# no .desktop file of its own; this is that tile for emuZero. It shows only while APPLaunch is
+# installed (TryExec), and its picture is M5's math_100.png (icons/calculator.png).
+[Desktop Entry]
+Type=Application
+Name=Calculator
+Comment=M5Stack's calculator
+Exec=/usr/share/APPLaunch/bin/M5CardputerZero-Calculator
+TryExec=/usr/share/APPLaunch/bin/M5CardputerZero-Calculator
+Terminal=false

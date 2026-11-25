@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: MIT
 # Headless checks against the apps in test/root.
 #   test/check.sh out/headless/emuzero-launcher out/check
-# 1. the app list matches test/expected-apps.txt (which entries show, names, icon or tile)
+# 1. the app list matches test/expected-apps.txt (which entries show, names, icon or tile;
+#    TryExec hides an entry whose program is missing)
 # 2. each layout draws after a key script; the PNGs are kept in out/check to look at
 # 3. the status bar in other states (charging, low, Wi-Fi not connected or off, no USB)
 # 4. Enter and O start the right command lines (the headless build prints them)
@@ -55,8 +56,9 @@ runs() {   # expected-line keys...
 	[ "$got" = "$want" ] || { echo "check: keys $1 started '$got', expected '$want'"; exit 1; }
 	echo "check: keys $1 start $want"
 }
-runs "/usr/bin/camera" right,right,enter
-runs "vi (terminal)" right,right,right,right,right,enter          # Exec=vi %F: field code dropped
+runs "/usr/share/APPLaunch/bin/M5CardputerZero-Calculator" right,right,enter   # M5's Calculator (TryExec found it)
+runs "/usr/bin/camera" right,right,right,enter
+runs "vi (terminal)" right,right,right,right,right,right,enter          # Exec=vi %F: field code dropped
 runs "nz-options (terminal)" o
 
 # 5. App info
@@ -68,17 +70,17 @@ admin() {   # name expected-nz-admin-call-or-empty keys
 	[ "$got" = "$2" ] || { echo "check: $1: nz-admin got '$got', expected '$2'"; exit 1; }
 	echo "check: $out/$1.png${2:+ ($2)}"
 }
-admin info-camera "" right,right,i
-admin info-back "" right,right,i,enter                              # Back first: closes, nothing runs
+admin info-camera "" right,right,right,i
+admin info-back "" right,right,right,i,enter                              # Back first: closes, nothing runs
 grep -q . "$out/info-back.out" && { echo "check: info-back started something"; exit 1; }
-admin info-confirm "" right,right,i,right,right,enter
-admin info-keep "" right,right,i,right,right,enter,enter            # "No, keep it" first
-admin info-removed "-n /usr/sbin/nz-admin store remove camera" right,right,i,right,right,enter,right,enter
-admin info-updated "-n /usr/sbin/nz-admin store install camera" right,right,i,right,enter
-admin info-files-confirm "" right,right,right,right,right,right,i,right,enter   # names Keyboard guide too
-admin info-own "" right,right,right,right,right,right,right,right,right,right,right,i                 # Options: held, no Remove
-admin info-own-enter "" right,right,right,right,right,right,right,right,right,right,right,i,right,right,enter
-admin info-local "" right,right,right,right,right,i                # /usr/local entry: no package
+admin info-confirm "" right,right,right,i,right,right,enter
+admin info-keep "" right,right,right,i,right,right,enter,enter            # "No, keep it" first
+admin info-removed "-n /usr/sbin/nz-admin store remove camera" right,right,right,i,right,right,enter,right,enter
+admin info-updated "-n /usr/sbin/nz-admin store install camera" right,right,right,i,right,enter
+admin info-files-confirm "" right,right,right,right,right,right,right,i,right,enter   # names Keyboard guide too
+admin info-own "" right,right,right,right,right,right,right,right,right,right,right,right,right,i                 # Options: held, no Remove
+admin info-own-enter "" right,right,right,right,right,right,right,right,right,right,right,right,right,i,right,right,enter
+admin info-local "" right,right,right,right,right,right,i                # /usr/local entry: no package
 
 # 6. themes
 "$bin" --themes > "$out/themes.txt"

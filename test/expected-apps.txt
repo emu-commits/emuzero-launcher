@@ -1,5 +1,6 @@
 longname	A very long application name that does not fit	tile
 broken-icon	Broken icon	tile
+calculator	Calculator	icon
 camera	Camera	icon
 checkup	Diagnostics	tile
 eclair	Éclair	tile
@@ -8,6 +9,7 @@ files	Files	icon
 keys	Keyboard guide	tile
 tracker	Music tracker	icon
 netinfo	Network info	tile
+tryexec-path	On PATH	tile
 onlyhere	Only in emuZero	tile
 nz-options	Options	icon
 poweroff	Power off	tile

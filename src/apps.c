@@ -32,6 +32,26 @@ static int list_has(const char *list, const char *word)
 
 static int readable(const char *p) { return p[0] && !access(p, R_OK); }
 
+/* TryExec=: the entry shows only when this program is there (an absolute file, or a name on
+ * $PATH), as for a tile of a program another package brings, like M5's Calculator */
+static int can_run(const char *prog)
+{
+	char p[1024];
+	if (strchr(prog, '/')) return !access(path_join(p, sizeof(p), prog), X_OK);
+	const char *path = getenv("PATH");
+	if (!path) path = "/usr/bin:/bin";
+	for (const char *d = path;; d++) {
+		size_t n = strcspn(d, ":");
+		if (n) {
+			snprintf(p, sizeof(p), "%s%.*s/%s", path_root(), (int)n, d, prog);
+			if (!access(p, X_OK)) return 1;
+		}
+		d += n;
+		if (!*d) break;
+	}
+	return 0;
+}
+
 /* Icon= is an absolute file, a file relative to the source's base, or a theme icon name */
 static void find_icon(struct app *a, const char *icon, const char *base)
 {
@@ -103,7 +123,7 @@ static void read_entry(const char *file, const char devfile[320], const char *id
 	FILE *f = fopen(file, "r");
 	if (!f) return;
 	struct app a = { 0 };
-	char line[768], icon[512] = "";
+	char line[768], icon[512] = "", tryexec[512] = "";
 	int in_entry = 0, hidden = 0, is_app = 1;
 	snprintf(a.id, sizeof(a.id), "%s", id);
 	snprintf(a.file, sizeof(a.file), "%.319s", devfile);
@@ -120,6 +140,7 @@ static void read_entry(const char *file, const char devfile[320], const char *id
 		else if (!strcmp(k, "Exec")) snprintf(a.exec, sizeof(a.exec), "%s", v);
 		else if (!strcmp(k, "Icon")) snprintf(icon, sizeof(icon), "%s", v);
 		else if (!strcmp(k, "Path")) snprintf(a.path, sizeof(a.path), "%s", v);
+		else if (!strcmp(k, "TryExec")) snprintf(tryexec, sizeof(tryexec), "%s", v);
 		else if (!strcmp(k, "Terminal")) a.terminal = !strcmp(v, "true");
 		else if (!strcmp(k, "Type")) is_app = !strcmp(v, "Application");
 		else if ((!strcmp(k, "Hidden") || !strcmp(k, "NoDisplay")) && !strcmp(v, "true")) hidden = 1;
@@ -129,6 +150,7 @@ static void read_entry(const char *file, const char devfile[320], const char *id
 	fclose(f);
 	strip_field_codes(a.exec);
 	if (hidden || !is_app || !a.name[0] || !a.exec[0]) return;
+	if (tryexec[0] && !can_run(tryexec)) return;
 	find_icon(&a, icon, base);
 	own_icon(&a);
 	apps[napps++] = a;

@@ -51,10 +51,13 @@ In the NimbleZero image the program is built by the `emuzero-launcher` Buildroot
 Apps come from desktop entry files in `/usr/local/share/applications`, `/usr/share/applications`
 and `/usr/share/APPLaunch/applications` (M5's launcher and the Store), listed together by name. An
 entry is left out when it is hidden (`Hidden`, `NoDisplay`), not an application, or marked for other
-launchers (`OnlyShowIn` without `emuZero`, or `NotShowIn=emuZero`); the same file name in two places
-is listed once (the earlier directory wins). Icons are PNG files (absolute, relative to
+launchers (`OnlyShowIn` without `emuZero`, or `NotShowIn=emuZero`), or when its `TryExec` program is
+missing; the same file name in two places is listed once (the earlier directory wins). Icons are PNG files (absolute, relative to
 `/usr/share/APPLaunch` for APPLaunch entries, or a `hicolor` theme name), decoded and scaled once per
 size; an app without a readable icon gets a drawn tile with its first letter.
+
+M5's launcher shows its Calculator as a built-in tile, with no entry file; `apps/calculator.desktop`
+is that tile for emuZero (M5's own picture, shown only while M5's launcher is installed).
 
 Two layouts; the theme names one, and the Theme page can choose either:
 
