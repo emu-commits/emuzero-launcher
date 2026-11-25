@@ -35,6 +35,7 @@ struct theme {
 	int glow;                     /* a soft light around the selected card or cell */
 	uint32_t icon_colors[8];      /* icons drawn in these colours only, dark to light */
 	int n_icon_colors;            /* 0: icons keep their own colours */
+	int sel_name;                 /* grid: only the name is highlighted, the icon tinted (as in a folder) */
 
 	/* [bar] status bar */
 	int bar_bottom, bar_h, bar_line;
@@ -52,6 +53,30 @@ struct theme {
 	int win_margin, win_margin_x, win_margin_y, win_border, win_bevel, win_title_h, win_stripes, win_close;
 	int win_radius, win_grad_hor;
 	uint32_t win_bg, win_border_color, win_title_bg, win_title_fg, win_title_grad, close_bg, close_fg;
+	/* a folder window: buttons, menu bar, a client area of its own, status bar, scrollbar */
+	int win_min_max;              /* minimise and maximise buttons beside the close button */
+	uint32_t min_max_bg;
+	char win_title_icon[32];      /* an app id whose picture goes before the title */
+	char win_title_pic[320];      /* or a picture file of the theme's own */
+	char win_menu[64];            /* menu bar words, or "" */
+	int win_menu_underline;       /* each word's first letter underlined */
+	uint32_t win_client, win_client_line;  /* the apps' own area (UNSET: none), its 1-px frame */
+	int win_client_bevel;
+	char win_status[32];          /* status bar: "%d object(s)", or "" for none */
+	int win_scrollbar;            /* grid: a scrollbar for the pages instead of dots */
+	uint32_t scroll_track, scroll_thumb, scroll_arrow, scroll_line;
+	int scroll_radius;
+	int win_dialogs;              /* App info in a window of its own */
+
+	/* [menu] the Theme page: a panel along the bottom, or a start menu over the bar's button */
+	int menu_start, menu_w, menu_bevel, menu_border, menu_radius, menu_separator;
+	uint32_t menu_bg, menu_fg, menu_border_color;
+	char menu_banner[24], menu_header[24];
+	uint32_t banner_bg, banner_grad, banner_fg, header_bg, header_grad, header_fg, footer_bg, footer_grad, footer_fg;
+
+	/* [button] App info's buttons; background UNSET: the theme's selected colours */
+	uint32_t btn_bg, btn_grad, btn_fg, btn_line, btn_focus;
+	int btn_radius, btn_bevel;
 };
 
 extern struct theme theme;

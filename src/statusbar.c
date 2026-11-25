@@ -16,7 +16,7 @@
 #define BAT_LOW 15
 #define BAT_MID 35
 
-static lv_obj_t *usb, *wifi, *bars[4], *clock_badge, *bat;
+static lv_obj_t *usb, *wifi, *bars[4], *clock_badge, *bat, *title_btn, *title_shade;
 static struct status shown;
 static char shown_time[8];
 static lv_timer_t *minute;
@@ -100,11 +100,25 @@ static void minute_cb(lv_timer_t *t)
 	lv_timer_set_period(t, ms_to_next_minute());
 }
 
+/* the start button pushed in while its menu is open: the bevel turned over, or the
+ * gradient upside down */
+void statusbar_pressed(int on)
+{
+	if (!title_btn) return;
+	if (title_shade) {
+		lv_obj_set_style_border_color(title_btn, lv_color_hex(on == (theme.title_bevel == BEVEL_RAISED) ? theme.shadow : theme.light), 0);
+		lv_obj_set_style_border_color(title_shade, lv_color_hex(on == (theme.title_bevel == BEVEL_RAISED) ? theme.light : theme.shadow), 0);
+	} else if (theme.title_grad != COLOR_UNSET && theme.title_bg != COLOR_NONE) {
+		lv_obj_set_style_bg_color(title_btn, lv_color_hex(on ? theme.title_grad : theme.title_bg), 0);
+		lv_obj_set_style_bg_grad_color(title_btn, lv_color_hex(on ? theme.title_bg : theme.title_grad), 0);
+	}
+}
+
 int statusbar_height(void) { return theme.bar_h ? theme.bar_h + (theme.bar_line ? 1 : 0) : 0; }
 
 void statusbar_create(lv_obj_t *scr)
 {
-	usb = wifi = clock_badge = bat = NULL;
+	usb = wifi = clock_badge = bat = title_btn = title_shade = NULL;
 	memset(&shown, 0xfe, sizeof(shown));   /* nothing shown yet: every value counts as new */
 	shown_time[0] = 0;
 	if (!minute) minute = lv_timer_create(minute_cb, ms_to_next_minute(), NULL);
@@ -142,7 +156,8 @@ void statusbar_create(lv_obj_t *scr)
 			lv_obj_set_style_bg_grad_dir(btn, LV_GRAD_DIR_VER, 0);
 		}
 		lv_obj_set_style_radius(btn, theme.title_radius, 0);
-		ui_bevel(btn, theme.title_bevel, 1);
+		title_shade = ui_bevel(btn, theme.title_bevel, 1);
+		title_btn = btn;
 		lv_obj_t *name = ui_label(btn, f, theme.title_fg, theme.title);
 		lv_obj_align(name, LV_ALIGN_CENTER, 0, 0);
 	} else if (theme.title[0]) {

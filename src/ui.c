@@ -90,7 +90,7 @@ lv_obj_t *ui_label(lv_obj_t *p, lv_font_t *f, uint32_t c, const char *text)
 /* ---- home ---- */
 
 static const struct layout *layout;
-static lv_obj_t *scr, *area, *toast;
+static lv_obj_t *scr, *area, *toast, *status_l, *status_r;
 static lv_timer_t *idle, *toast_timer;
 static int sel, idle_s;
 static struct ui_rect page_rect;
@@ -118,9 +118,9 @@ static const struct layout *pick_layout(void)
 
 /* raised: light along the top and left, shade along the bottom and right; sunken: the reverse.
  * Two nested borders, since an LVGL border has one colour. o must have no padding. */
-void ui_bevel(lv_obj_t *o, int style, int w)
+lv_obj_t *ui_bevel(lv_obj_t *o, int style, int w)
 {
-	if (style == BEVEL_NONE || w <= 0) return;
+	if (style == BEVEL_NONE || w <= 0) return NULL;
 	uint32_t tl = style == BEVEL_RAISED ? theme.light : theme.shadow, br = style == BEVEL_RAISED ? theme.shadow : theme.light;
 	lv_obj_update_layout(o);   /* its size, below, may still be pending */
 	lv_obj_set_style_border_width(o, w, 0);
@@ -135,6 +135,7 @@ void ui_bevel(lv_obj_t *o, int style, int w)
 	lv_obj_set_style_border_width(in, w, 0);
 	lv_obj_set_style_border_side(in, LV_BORDER_SIDE_BOTTOM | LV_BORDER_SIDE_RIGHT, 0);
 	lv_obj_set_style_border_color(in, lv_color_hex(br), 0);
+	return in;
 }
 
 static lv_obj_t *box(lv_obj_t *parent, int x, int y, int w, int h, uint32_t bg)
@@ -146,6 +147,173 @@ static lv_obj_t *box(lv_obj_t *parent, int x, int y, int w, int h, uint32_t bg)
 	lv_obj_set_size(o, w, h);
 	if (bg != UINT32_MAX) { lv_obj_set_style_bg_opa(o, LV_OPA_COVER, 0); lv_obj_set_style_bg_color(o, lv_color_hex(bg), 0); }
 	return o;
+}
+
+/* the picture in the home window's title bar: [window] title_icon names an app id */
+static const struct app *title_icon(void)
+{
+	static struct app a;
+	char p[512], f[80];
+	memset(&a, 0, sizeof(a));
+	if (theme.win_title_pic[0]) {   /* a picture of the theme's own */
+		snprintf(a.id, sizeof(a.id), "title-icon");
+		snprintf(a.icon, sizeof(a.icon), "%s", theme.win_title_pic);
+		return &a;
+	}
+	if (!theme.win_title_icon[0]) return NULL;
+	snprintf(a.id, sizeof(a.id), "%s", theme.win_title_icon);
+	snprintf(f, sizeof(f), "/usr/share/emuzero/icons/%.60s.png", theme.win_title_icon);
+	if (!access(path_join(p, sizeof(p), f), R_OK)) snprintf(a.icon, sizeof(a.icon), "%s", p);
+	return icon_file(&a) ? &a : NULL;
+}
+
+/* a title-bar button s x s at x: the close cross, or the minimise or maximise sign */
+enum { BTN_CLOSE, BTN_MAX, BTN_MIN };
+static void title_button(lv_obj_t *t, int x, int s, int kind)
+{
+	uint32_t bg = kind == BTN_CLOSE ? theme.close_bg : theme.min_max_bg, fg = theme.close_fg;
+	lv_obj_t *c = box(t, x, (theme.win_title_h - s) / 2, s, s, bg);
+	int in = 0;   /* the frame's width: what the signs sit inside */
+	if (theme.win_bevel) { ui_bevel(c, BEVEL_RAISED, 1); in = 1; }
+	else {
+		lv_obj_set_style_radius(c, theme.win_radius ? 3 : 0, 0);
+		lv_obj_set_style_border_width(c, 1, 0);
+		lv_obj_set_style_border_color(c, lv_color_hex(fg), 0);
+		in = 1;
+	}
+	int a = s - 2 * in;   /* inner size */
+	if (kind == BTN_CLOSE) {
+		lv_obj_t *x = ui_label(c, ui_font(s - 2 > 8 ? s - 2 : 8, 1), fg, "\u00d7");
+		lv_obj_align(x, LV_ALIGN_CENTER, 0, -1);
+	} else if (kind == BTN_MIN) {
+		int w = a / 2 + 1;
+		box(c, (a - w) / 2 - 1, a - 4, w, 2, fg);
+	} else {
+		int w = a - 5;
+		lv_obj_t *f = box(c, (a - w) / 2, (a - w) / 2, w, w, UINT32_MAX);
+		lv_obj_set_style_border_width(f, 1, 0);
+		lv_obj_set_style_border_color(f, lv_color_hex(fg), 0);
+		box(f, 0, 0, w - 2, 1, fg);   /* the thick top edge */
+	}
+}
+
+/* a row of sunken panels for the status bar; returns the label in it */
+static lv_obj_t *status_panel(lv_obj_t *p, int x, int y, int w, int h)
+{
+	lv_obj_t *o = box(p, x, y, w, h, UINT32_MAX);
+	ui_bevel(o, BEVEL_SUNKEN, 1);
+	lv_obj_t *l = ui_label(o, ui_font(10, 0), theme.fg, "");
+	lv_obj_set_width(l, w - 8);
+	lv_label_set_long_mode(l, LV_LABEL_LONG_DOT);
+	lv_obj_align(l, LV_ALIGN_LEFT_MID, 3, 0);
+	return l;
+}
+
+void ui_window(lv_obj_t *parent, int x, int y, int w, int h, const char *title, const struct app *icon, int folder, struct ui_win *out)
+{
+	int b = theme.win_bevel ? 2 : theme.win_border;
+	lv_obj_t *win = box(parent, x, y, w, h, theme.win_bg);
+	if (theme.win_radius) {   /* rounded, and what lies inside cut to the same corners */
+		lv_obj_set_style_radius(win, theme.win_radius, 0);
+		lv_obj_set_style_clip_corner(win, true, 0);
+	}
+	if (theme.win_bevel) ui_bevel(win, theme.win_bevel, 2);
+	else if (b) { lv_obj_set_style_border_width(win, b, 0); lv_obj_set_style_border_color(win, lv_color_hex(theme.win_border_color), 0); }
+	int iw = w - 2 * b, ih = h - 2 * b, th = theme.win_title_h, y0 = 0;
+	if (th) {
+		lv_obj_t *t = box(win, 0, 0, iw, th, theme.win_title_bg);
+		if (theme.win_title_grad != COLOR_UNSET) {
+			lv_obj_set_style_bg_grad_color(t, lv_color_hex(theme.win_title_grad), 0);
+			lv_obj_set_style_bg_grad_dir(t, theme.win_grad_hor ? LV_GRAD_DIR_HOR : LV_GRAD_DIR_VER, 0);
+		}
+		if (theme.win_stripes)   /* lines across the title bar, every other row */
+			for (int y = 2; y < th - 2; y += 2) box(t, 2, y, iw - 4, 1, theme.win_title_fg);
+		int right = iw;   /* where the title text must stop */
+		if (theme.win_close == CLOSE_RIGHT && th >= 8) {
+			int s = th - 4, gap = theme.win_bevel ? 0 : 2;
+			right = iw - s - 2;
+			title_button(t, right, s, BTN_CLOSE);
+			if (theme.win_min_max && folder) {   /* a dialog has the close button alone */
+				right -= s + 2;
+				title_button(t, right, s, BTN_MAX);
+				right -= s + gap;
+				title_button(t, right, s, BTN_MIN);
+			}
+		} else if (theme.win_close == CLOSE_LEFT) {
+			lv_obj_t *c = box(t, 6, (th - 9) / 2, 9, 9, theme.win_title_bg);
+			lv_obj_set_style_border_width(c, 1, 0);
+			lv_obj_set_style_border_color(c, lv_color_hex(theme.win_title_fg), 0);
+			lv_obj_set_style_outline_width(c, 1, 0);
+			lv_obj_set_style_outline_color(c, lv_color_hex(theme.win_title_bg), 0);
+		}
+		int tx = 4;   /* the label's left edge; its padding puts the text 5 further */
+		if (icon && th >= 12) {   /* the window's picture before its title */
+			int s = th - 4;
+			lv_obj_t *ic = icon_create(t, icon, s);
+			lv_obj_set_pos(ic, 3, 2);
+			tx = s;
+		}
+		if (title && title[0]) {
+			lv_obj_t *l = ui_label(t, ui_font(th >= 14 ? 11 : 10, 1), theme.win_title_fg, title);
+			lv_obj_set_style_bg_opa(l, theme.win_title_grad == COLOR_UNSET ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
+			lv_obj_set_style_bg_color(l, lv_color_hex(theme.win_title_bg), 0);
+			lv_obj_set_style_pad_hor(l, 5, 0);
+			lv_label_set_long_mode(l, LV_LABEL_LONG_DOT);
+			lv_obj_update_layout(l);
+			int max = right - tx - 4;
+			if (lv_obj_get_width(l) > max) lv_obj_set_width(l, max);
+			lv_obj_align(l, theme.win_stripes ? LV_ALIGN_CENTER : LV_ALIGN_LEFT_MID, theme.win_stripes ? 0 : tx, 0);
+		}
+		if (!theme.win_bevel) box(win, 0, th, iw, 1, theme.win_border_color);   /* line under the title */
+		y0 = th + 1;
+	}
+	out->status_l = out->status_r = NULL;
+	int y1 = ih;   /* the bottom of what the contents may use */
+	if (folder && theme.win_menu[0]) {   /* menu bar: the words, first letters underlined */
+		int mh = 13, mx = 6;
+		char words[sizeof(theme.win_menu)], *save;
+		snprintf(words, sizeof(words), "%s", theme.win_menu);
+		lv_font_t *f = ui_font(11, 0);
+		for (char *wd = strtok_r(words, " ", &save); wd; wd = strtok_r(NULL, " ", &save)) {
+			lv_obj_t *l = ui_label(win, f, theme.fg, wd);
+			lv_obj_set_pos(l, mx, y0);
+			if (theme.win_menu_underline) {
+				int u = lv_text_get_width(wd, 1, f, 0);
+				box(win, mx, y0 + lv_font_get_line_height(f) - 1, u, 1, theme.fg);
+			}
+			mx += lv_text_get_width(wd, strlen(wd), f, 0) + 9;
+		}
+		y0 += mh;
+		if (!theme.win_bevel) { box(win, 0, y0, iw, 1, theme.line); y0 += 1; }
+		y0 += 1;
+	}
+	if (folder && theme.win_status[0]) {   /* status bar: the selected app, the number of apps */
+		int sh = 14, rw = 82;
+		y1 -= sh;
+		out->status_l = status_panel(win, 0, y1 + 1, iw - rw - 2, sh - 1);
+		out->status_r = status_panel(win, iw - rw, y1 + 1, rw, sh - 1);
+		y1 -= 1;
+	}
+	lv_obj_t *body = win;
+	int bx = 0, cw = iw, ch = y1 - y0;
+	if (folder && theme.win_client != COLOR_UNSET) {   /* the apps' own area, in a frame of its own */
+		lv_obj_t *c = box(win, 0, y0, iw, ch, theme.win_client);
+		int cb = 0;
+		if (theme.win_client_bevel) { ui_bevel(c, theme.win_client_bevel, 2); cb = 2; }
+		else if (theme.win_client_line != COLOR_UNSET) {
+			lv_obj_set_style_border_width(c, 1, 0);
+			lv_obj_set_style_border_color(c, lv_color_hex(theme.win_client_line), 0);
+			cb = 1;
+		}
+		body = c;
+		y0 = 0;
+		cw = iw - 2 * cb;
+		ch -= 2 * cb;
+	}
+	out->body = box(body, bx, y0, cw, ch, UINT32_MAX);
+	out->frame = win;
+	out->w = cw;
+	out->h = ch;
 }
 
 /* Everything on the screen, from the theme: background or wallpaper, status bar, the window
@@ -168,53 +336,15 @@ static void build(void)
 
 	struct ui_rect r = page_rect;
 	lv_obj_t *parent = scr;
+	status_l = status_r = NULL;
 	if (theme.win) {
-		int mx = theme.win_margin_x, my = theme.win_margin_y, b = theme.win_bevel ? 2 : theme.win_border;
-		lv_obj_t *w = box(scr, mx, top + my, SCREEN_W - 2 * mx, r.h - 2 * my, theme.win_bg);
-		if (theme.win_radius) {   /* rounded, and what lies inside cut to the same corners */
-			lv_obj_set_style_radius(w, theme.win_radius, 0);
-			lv_obj_set_style_clip_corner(w, true, 0);
-		}
-		if (theme.win_bevel) ui_bevel(w, theme.win_bevel, 2);
-		else if (b) { lv_obj_set_style_border_width(w, b, 0); lv_obj_set_style_border_color(w, lv_color_hex(theme.win_border_color), 0); }
-		int iw = SCREEN_W - 2 * mx - 2 * b, ih = r.h - 2 * my - 2 * b, th = theme.win_title_h;
-		if (th) {
-			lv_obj_t *t = box(w, 0, 0, iw, th, theme.win_title_bg);
-			if (theme.win_title_grad != COLOR_UNSET) {
-				lv_obj_set_style_bg_grad_color(t, lv_color_hex(theme.win_title_grad), 0);
-				lv_obj_set_style_bg_grad_dir(t, theme.win_grad_hor ? LV_GRAD_DIR_HOR : LV_GRAD_DIR_VER, 0);
-			}
-			if (theme.win_stripes)   /* lines across the title bar, every other row */
-				for (int y = 2; y < th - 2; y += 2) box(t, 2, y, iw - 4, 1, theme.win_title_fg);
-			if (theme.win_close == CLOSE_RIGHT && th >= 8) {   /* a button with a cross */
-				int s = th - 4;
-				lv_obj_t *c = box(t, iw - s - 2, 2, s, s, theme.close_bg);
-				if (theme.win_bevel) ui_bevel(c, BEVEL_RAISED, 1);
-				else {
-					lv_obj_set_style_radius(c, theme.win_radius ? 3 : 0, 0);
-					lv_obj_set_style_border_width(c, 1, 0);
-					lv_obj_set_style_border_color(c, lv_color_hex(theme.close_fg), 0);
-				}
-				lv_obj_t *x = ui_label(c, ui_font(s - 2 > 8 ? s - 2 : 8, 1), theme.close_fg, "\u00d7");
-				lv_obj_align(x, LV_ALIGN_CENTER, 0, -1);
-			} else if (theme.win_close == CLOSE_LEFT) {
-				lv_obj_t *c = box(t, 6, (th - 9) / 2, 9, 9, theme.win_title_bg);
-				lv_obj_set_style_border_width(c, 1, 0);
-				lv_obj_set_style_border_color(c, lv_color_hex(theme.win_title_fg), 0);
-				lv_obj_set_style_outline_width(c, 1, 0);
-				lv_obj_set_style_outline_color(c, lv_color_hex(theme.win_title_bg), 0);
-			}
-			if (theme.win_title[0]) {
-				lv_obj_t *l = ui_label(t, ui_font(th >= 14 ? 11 : 10, 1), theme.win_title_fg, theme.win_title);
-				lv_obj_set_style_bg_opa(l, LV_OPA_COVER, 0);
-				lv_obj_set_style_bg_color(l, lv_color_hex(theme.win_title_bg), 0);
-				lv_obj_set_style_pad_hor(l, 5, 0);
-				lv_obj_align(l, theme.win_stripes ? LV_ALIGN_CENTER : LV_ALIGN_LEFT_MID, theme.win_stripes ? 0 : 4, 0);
-			}
-			if (!theme.win_bevel) box(w, 0, th, iw, 1, theme.win_border_color);   /* line under the title */
-		}
-		parent = w;
-		r = (struct ui_rect){ 0, th ? th + 1 : 0, iw, ih - (th ? th + 1 : 0) };
+		struct ui_win w;
+		int mx = theme.win_margin_x, my = theme.win_margin_y;
+		ui_window(scr, mx, top + my, SCREEN_W - 2 * mx, r.h - 2 * my, theme.win_title, title_icon(), 1, &w);
+		parent = w.body;
+		status_l = w.status_l;
+		status_r = w.status_r;
+		r = (struct ui_rect){ 0, 0, w.w, w.h };
 	}
 	area = box(parent, r.x, r.y, r.w, r.h, UINT32_MAX);
 
@@ -232,12 +362,26 @@ static void build(void)
 	layout = pick_layout();
 }
 
+/* the window's status bar: the selected app's description, the number of apps */
+static void status_show(void)
+{
+	char s[64];
+	if (status_l) lv_label_set_text(status_l, !napps ? "" : apps[sel].comment[0] ? apps[sel].comment : apps[sel].name);
+	if (status_r) { snprintf(s, sizeof(s), theme.win_status, napps); lv_label_set_text(status_r, s); }
+}
+
+static void show_sel(void)
+{
+	layout->show(sel);
+	status_show();
+}
+
 static void show_layout(void)
 {
 	lv_obj_clean(area);
 	lv_obj_update_layout(area);   /* layouts size themselves from the area */
 	layout->create(area);
-	layout->show(sel);
+	show_sel();
 	lv_obj_move_foreground(toast);
 }
 
@@ -391,7 +535,7 @@ static void key_cb(lv_event_t *e)
 	case LV_KEY_UP: case LV_KEY_DOWN: case LV_KEY_LEFT: case LV_KEY_RIGHT:
 		if (napps) {
 			int n = layout->move(k, sel, napps);
-			if (n != sel) { sel = n; layout->show(sel); }
+			if (n != sel) { sel = n; show_sel(); }
 		}
 		break;
 	case LV_KEY_ENTER:

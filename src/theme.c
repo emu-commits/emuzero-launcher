@@ -36,6 +36,12 @@ static void defaults(struct theme *t)
 	t->win_margin = 4; t->win_margin_x = t->win_margin_y = -1; t->win_border = 1; t->win_title_h = 14;
 	t->win_bg = t->win_border_color = t->win_title_bg = t->win_title_fg = UNSET;
 	t->win_title_grad = t->close_bg = t->close_fg = UNSET;
+	t->min_max_bg = t->win_client = t->win_client_line = UNSET;
+	t->scroll_track = t->scroll_thumb = t->scroll_arrow = t->scroll_line = UNSET;
+	t->menu_w = 200; t->menu_bg = t->menu_fg = t->menu_border_color = UNSET;
+	t->banner_bg = t->banner_grad = t->banner_fg = t->header_bg = t->header_grad = t->header_fg = UNSET;
+	t->footer_bg = t->footer_grad = t->footer_fg = UNSET;
+	t->btn_bg = t->btn_grad = t->btn_fg = t->btn_line = t->btn_focus = UNSET;
 }
 
 static void derive(struct theme *t)
@@ -47,7 +53,12 @@ static void derive(struct theme *t)
 	D(bar_bg, t->bg); D(bar_fg, t->fg); D(bar_line_color, t->line); D(title_fg, t->accent);
 	D(badge_bg, t->line); D(badge_fg, t->fg);
 	D(win_bg, t->bg); D(win_border_color, t->fg); D(win_title_bg, t->bg); D(win_title_fg, t->fg);
-	D(close_bg, t->win_title_bg); D(close_fg, t->win_title_fg);
+	D(close_bg, t->win_title_bg); D(close_fg, t->win_title_fg); D(min_max_bg, t->close_bg);
+	D(scroll_track, t->win_bg); D(scroll_thumb, t->win_bg); D(scroll_arrow, t->fg); D(scroll_line, t->line);
+	D(menu_bg, t->win ? t->win_bg : t->bg); D(menu_fg, t->fg); D(menu_border_color, t->line);
+	D(banner_bg, t->accent); D(banner_fg, t->sel_fg); D(header_bg, t->accent); D(header_fg, t->sel_fg);
+	D(footer_bg, t->menu_bg); D(footer_fg, t->dim);
+	D(btn_fg, t->fg); D(btn_line, t->line); D(btn_focus, t->accent);
 	if (t->win_margin_x < 0) t->win_margin_x = t->win_margin;
 	if (t->win_margin_y < 0) t->win_margin_y = t->win_margin;
 #undef D
@@ -86,6 +97,11 @@ static char *comment(char *v)
 static int yes(const char *v)
 {
 	return !strcasecmp(v, "yes") || !strcasecmp(v, "true") || !strcasecmp(v, "on") || !strcmp(v, "1");
+}
+
+static int bevel(const char *v)
+{
+	return !strcmp(v, "raised") ? BEVEL_RAISED : !strcmp(v, "sunken") ? BEVEL_SUNKEN : BEVEL_NONE;
 }
 
 static int num(const char *v, int lo, int hi, int def)
@@ -131,6 +147,18 @@ static void set(struct theme *t, const char *sec, const char *k, const char *v, 
 		{ "window", "close_background", &t->close_bg }, { "window", "close_color", &t->close_fg },
 		{ "bar", "gradient", &t->bar_grad }, { "bar", "title_background", &t->title_bg },
 		{ "bar", "title_gradient", &t->title_grad },
+		{ "window", "min_max_background", &t->min_max_bg }, { "window", "client", &t->win_client },
+		{ "window", "client_line", &t->win_client_line },
+		{ "window", "scroll_track", &t->scroll_track }, { "window", "scroll_thumb", &t->scroll_thumb },
+		{ "window", "scroll_arrow", &t->scroll_arrow }, { "window", "scroll_line", &t->scroll_line },
+		{ "menu", "background", &t->menu_bg }, { "menu", "text", &t->menu_fg }, { "menu", "border_color", &t->menu_border_color },
+		{ "menu", "banner_background", &t->banner_bg }, { "menu", "banner_gradient", &t->banner_grad },
+		{ "menu", "banner_color", &t->banner_fg }, { "menu", "header_background", &t->header_bg },
+		{ "menu", "header_gradient", &t->header_grad }, { "menu", "header_color", &t->header_fg },
+		{ "menu", "footer_background", &t->footer_bg }, { "menu", "footer_gradient", &t->footer_grad },
+		{ "menu", "footer_color", &t->footer_fg },
+		{ "button", "background", &t->btn_bg }, { "button", "gradient", &t->btn_grad }, { "button", "color", &t->btn_fg },
+		{ "button", "border_color", &t->btn_line }, { "button", "focus", &t->btn_focus },
 	};
 	struct { const char *sec, *key; int *i, lo, hi; } nums[] = {
 		{ "home", "card_radius", &t->card_radius, 0, 50 }, { "home", "card_border", &t->card_border, 0, 6 },
@@ -140,10 +168,16 @@ static void set(struct theme *t, const char *sec, const char *k, const char *v, 
 		{ "window", "title_height", &t->win_title_h, 0, 24 },
 		{ "window", "margin_x", &t->win_margin_x, 0, 40 }, { "window", "margin_y", &t->win_margin_y, 0, 40 },
 		{ "window", "radius", &t->win_radius, 0, 12 }, { "bar", "title_radius", &t->title_radius, 0, 15 },
+		{ "window", "scroll_radius", &t->scroll_radius, 0, 6 },
+		{ "menu", "width", &t->menu_w, 120, 320 }, { "menu", "border", &t->menu_border, 0, 4 },
+		{ "menu", "radius", &t->menu_radius, 0, 12 }, { "button", "radius", &t->btn_radius, 0, 12 },
 	};
 	struct { const char *sec, *key; int *b; } flags[] = {
 		{ "home", "chevrons", &t->chevrons }, { "home", "track", &t->track }, { "bar", "line", &t->bar_line },
 		{ "window", "show", &t->win }, { "window", "stripes", &t->win_stripes }, { "home", "glow", &t->glow },
+		{ "window", "min_max", &t->win_min_max }, { "window", "menu_underline", &t->win_menu_underline },
+		{ "window", "scrollbar", &t->win_scrollbar }, { "window", "dialogs", &t->win_dialogs },
+		{ "menu", "separator", &t->menu_separator },
 	};
 	for (size_t i = 0; i < sizeof(colors) / sizeof(colors[0]); i++)
 		if (!strcmp(sec, colors[i].sec) && !strcmp(k, colors[i].key)) {
@@ -163,6 +197,24 @@ static void set(struct theme *t, const char *sec, const char *k, const char *v, 
 	else if (!strcmp(sec, "bar") && !strcmp(k, "title")) snprintf(t->title, sizeof(t->title), "%s", v);
 	else if (!strcmp(sec, "bar") && !strcmp(k, "badges"))
 		t->badge_style = !strcmp(v, "square") ? BADGE_SQUARE : !strcmp(v, "plain") ? BADGE_PLAIN : !strcmp(v, "sunken") ? BADGE_SUNKEN : BADGE_ROUND;
+	else if (!strcmp(sec, "home") && !strcmp(k, "selection")) t->sel_name = !strcmp(v, "name");
+	else if (!strcmp(sec, "window") && !strcmp(k, "title_icon")) {   /* folder.png: a picture; files: an app's */
+		size_t n = strlen(v);
+		if (n > 4 && !strcasecmp(v + n - 4, ".png")) file(t->win_title_pic, sizeof(t->win_title_pic), t->dir, v, 0);
+		else snprintf(t->win_title_icon, sizeof(t->win_title_icon), "%s", v);
+	}
+	else if (!strcmp(sec, "window") && !strcmp(k, "menu")) snprintf(t->win_menu, sizeof(t->win_menu), "%s", v);
+	else if (!strcmp(sec, "window") && !strcmp(k, "status")) {   /* one %d at most: the number of apps */
+		const char *pc = strchr(v, '%');
+		if (pc && (pc[1] != 'd' || strchr(pc + 1, '%'))) fprintf(stderr, "emuzero-launcher: theme %s line %d: status takes one %%d\n", t->id, line);
+		else snprintf(t->win_status, sizeof(t->win_status), "%s", v);
+	}
+	else if (!strcmp(sec, "window") && !strcmp(k, "client_bevel")) t->win_client_bevel = bevel(v);
+	else if (!strcmp(sec, "menu") && !strcmp(k, "style")) t->menu_start = !strcmp(v, "start");
+	else if (!strcmp(sec, "menu") && !strcmp(k, "bevel")) t->menu_bevel = bevel(v);
+	else if (!strcmp(sec, "menu") && !strcmp(k, "banner")) snprintf(t->menu_banner, sizeof(t->menu_banner), "%s", v);
+	else if (!strcmp(sec, "menu") && !strcmp(k, "header")) snprintf(t->menu_header, sizeof(t->menu_header), "%s", v);
+	else if (!strcmp(sec, "button") && !strcmp(k, "bevel")) t->btn_bevel = bevel(v);
 	else if (!strcmp(sec, "window") && !strcmp(k, "title")) snprintf(t->win_title, sizeof(t->win_title), "%s", v);
 	else if (!strcmp(sec, "window") && !strcmp(k, "bevel"))
 		t->win_bevel = !strcmp(v, "raised") ? BEVEL_RAISED : !strcmp(v, "sunken") ? BEVEL_SUNKEN : BEVEL_NONE;

@@ -9,9 +9,16 @@ int ui_fonts(void);
 lv_font_t *ui_font(int px, int bold);
 /* a 3-D frame w pixels wide (BEVEL_RAISED or BEVEL_SUNKEN) in the theme's light and shadow;
  * o must have no padding and its final size */
-void ui_bevel(lv_obj_t *o, int style, int w);
+lv_obj_t *ui_bevel(lv_obj_t *o, int style, int w);   /* returns the shade's object */
 /* a label in font f and colour c */
 lv_obj_t *ui_label(lv_obj_t *parent, lv_font_t *f, uint32_t c, const char *text);
+
+/* a window at x,y,w,h on parent in the theme's [window] style: title bar (with icon's picture
+ * when not NULL) and buttons; a folder window adds the menu bar, its client area and status bar.
+ * Contents go in body, w x h; status_l/status_r are the status bar's labels (or NULL). */
+struct app;
+struct ui_win { lv_obj_t *frame, *body, *status_l, *status_r; int w, h; };
+void ui_window(lv_obj_t *parent, int x, int y, int w, int h, const char *title, const struct app *icon, int folder, struct ui_win *out);
 
 /* layout by name ("carousel", "grid") or theme for this run, before ui_fonts; 0 if known */
 int ui_set_layout(const char *name);

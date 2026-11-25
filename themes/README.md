@@ -43,6 +43,7 @@ Colours are written `#rrggbb`; where the table says so, `none` draws nothing the
 | | `name_selected` | the selected app's name under the carousel (in the grid it sits on `selected` and uses `selected_text`) | = text |
 | | `glow` | a soft light around the selected card (in `card_selected_line`) or grid cell (in `accent`) | no |
 | | `icon_colors` | 2 to 8 colours, dark to light: every icon is drawn in these only, by brightness; the lightest is kept for white parts | none (own colours) |
+| | `selection` | grid: `cell` (the whole cell on `selected`) or `name` (as in a folder: only the name on `selected`, the icon tinted with it) | cell |
 | | `chevrons` | ‹ › at the sides of the carousel | yes |
 | | `track` | position bar under the carousel | yes |
 | `[bar]` | `position` | `top` or `bottom` | top |
@@ -69,6 +70,25 @@ Colours are written `#rrggbb`; where the table says so, `none` draws nothing the
 | | `background`, `border_color` | window colours (App info and the Theme page use `background` and the main text colours too) | = background, text |
 | | `title_background`, `title_color` | title bar colours | = background, text |
 | | `title_gradient`, `title_gradient_direction` | a second title bar colour, `vertical` (top to bottom) or `horizontal` (left to right) | none, vertical |
+| | `title_icon` | a picture before the title: a PNG in the theme folder (`folder.png`, drawn at the title bar's height less 4) or an app id whose icon to use | none |
+| | `min_max`, `min_max_background` | minimise and maximise buttons beside the right-hand close button (home window only), and their fill | no, = close_background |
+| | `menu`, `menu_underline` | a menu bar under the title: the words, and whether each first letter is underlined | none, no |
+| | `client`, `client_bevel`, `client_line` | the apps' own area inside the window: its colour (`#rrggbb`; unset: none), a `sunken` or `raised` 2-px frame, or else a 1-px frame in this colour | none, none, none |
+| | `status` | a status bar along the bottom: the selected app's description, and this text with `%d` for the number of apps (`%d object(s)`) | none |
+| | `scrollbar` | grid: a scrollbar at the right for the pages instead of dots | no |
+| | `scroll_track`, `scroll_thumb`, `scroll_line`, `scroll_arrow`, `scroll_radius` | its colours (`scroll_line` frames the buttons in a window without `bevel`; with one they are raised) and corner rounding 0–6 | = background, background, line, text, 0 |
+| | `dialogs` | App info as a dialog window over the home screen: the app's icon and the title in the title bar, the buttons at the right | no |
+| `[menu]` | `style` | the Theme page: `panel` (along the bottom) or `start` (a menu on the bar's title button, which shows pushed in) | panel |
+| | `width` | the start menu's width, 120–320 | 200 |
+| | `background`, `text` | its colours | = window background, text |
+| | `bevel`, `border`, `border_color`, `radius` | its frame: `raised` or `sunken`, else a border 0–4 wide; corner rounding 0–12 | none, 0, = line, 0 |
+| | `banner`, `banner_background`, `banner_gradient`, `banner_color` | a name reading upwards in a band down the left side | none, = accent, none, = selected_text |
+| | `header`, `header_background`, `header_gradient`, `header_color` | a name in a band across the top | none, = accent, none, = selected_text |
+| | `separator` | a line above the keys row (etched with `bevel`) | no |
+| | `footer_background`, `footer_gradient`, `footer_color` | the keys row at the bottom; a background of its own runs the full width | = background, none, = dim |
+| `[button]` | `background`, `gradient` | App info's buttons in colours of their own (unset: the theme's selected colours) | none |
+| | `color`, `border_color`, `radius`, `bevel` | their text, frame (or a `raised` bevel), rounding 0–12 | = text, = line, 0, none |
+| | `focus` | the focused button: dots inside it (with `bevel`, which also adds a `border_color` edge) or a ring | = accent |
 
 The battery badge keeps its own colours (green, yellow at 35 % and below, red at 15 % and
 below). With `badges = plain` those colours go to the text.
@@ -87,10 +107,14 @@ down to the size each layout draws.
 - **minimal**: the default. Dark, with rounded cards in a carousel.
 - **paper**: a sample showing what a folder alone can change: black on white, square corners,
   a grid inside a window with a striped title bar.
-- **desktop95**: the grey 3-D desktop of the mid-90s: teal, a navy title bar, a Start button
-  and a sunken clock on a grey taskbar.
-- **desktop2001**: the glossy blue desktop of the early 2000s: sky and a green hill, a rounded
-  window with a blue title bar and a red close button, a green start button.
+- **desktop95**: the grey 3-D desktop of the mid-90s: teal, the apps in a folder window (navy
+  title bar, menu bar, white sunken contents, scrollbar, status bar), a Start button and a
+  sunken clock on a grey taskbar; the Theme page is a start menu with a grey band, App info a
+  dialog with grey buttons.
+- **desktop2001**: the glossy blue desktop of the early 2000s: sky and a green hill, the apps in
+  a rounded folder window (blue title bar, blue and red buttons, menu bar, white contents, soft
+  blue scrollbar, status bar), a green start button; the Theme page is a start menu with blue
+  bands top and bottom, App info a dialog.
 - **superhandheld**: a handheld game on a TV, inside a console border: four colours on a cream
   screen, the icons drawn in the same four.
 - **fieldindex**: a red pocket field guide: a big blue lens and three lamps on the lid, a hinge,
@@ -99,5 +123,5 @@ down to the size each layout draws.
   light up, icons in magenta and cyan.
 
 The wallpapers are drawn by `tools/draw-wallpapers.py` (`python3 tools/draw-wallpapers.py
-themes`); they are our own drawings, and the themes use no fonts, logos or names of the
+themes`), the title-bar folders by `tools/draw-title-icons.py`; they are our own drawings, and the themes use no fonts, logos or names of the
 products they call to mind.

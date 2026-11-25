@@ -115,10 +115,68 @@ static const char *act_text(enum action a)
 
 static lv_obj_t *buttons_row;
 
+/* a dotted frame inside the focused button, as on the grey desktops */
+static void focus_dots(lv_obj_t *b, int w, int h)
+{
+	static lv_point_precise_t pts[5];
+	pts[0] = (lv_point_precise_t){ 0, 0 }; pts[1] = (lv_point_precise_t){ w - 1, 0 };
+	pts[2] = (lv_point_precise_t){ w - 1, h - 1 }; pts[3] = (lv_point_precise_t){ 0, h - 1 }; pts[4] = pts[0];
+	lv_obj_t *l = lv_line_create(b);
+	lv_line_set_points(l, pts, 5);
+	lv_obj_set_style_line_width(l, 1, 0);
+	lv_obj_set_style_line_color(l, lv_color_hex(theme.btn_focus), 0);
+	lv_obj_set_style_line_dash_width(l, 1, 0);
+	lv_obj_set_style_line_dash_gap(l, 1, 0);
+	lv_obj_set_pos(l, 3, 3);
+}
+
+/* [button]: buttons of the theme's own, the focused one framed (a black edge and dots with a
+ * bevel, a coloured ring inside without) */
+static void theme_button(int i)
+{
+	lv_font_t *f = ui_font(12, 0);
+	const char *t = act_text(acts[i]);
+	int on = i == cur, w = lv_text_get_width(t, strlen(t), f, 0) + 18, h = 21;
+	if (w < 60) w = 60;
+	lv_obj_t *b = lv_obj_create(buttons_row);
+	lv_obj_remove_style_all(b);
+	lv_obj_remove_flag(b, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+	lv_obj_set_size(b, w, h);
+	lv_obj_set_style_bg_opa(b, LV_OPA_COVER, 0);
+	lv_obj_set_style_bg_color(b, lv_color_hex(theme.btn_bg), 0);
+	if (theme.btn_grad != COLOR_UNSET) {
+		lv_obj_set_style_bg_grad_color(b, lv_color_hex(theme.btn_grad), 0);
+		lv_obj_set_style_bg_grad_dir(b, LV_GRAD_DIR_VER, 0);
+	}
+	lv_obj_set_style_radius(b, theme.btn_radius, 0);
+	if (theme.btn_bevel) {
+		if (on) {
+			lv_obj_set_style_outline_width(b, 1, 0);
+			lv_obj_set_style_outline_color(b, lv_color_hex(theme.btn_line), 0);
+		}
+		ui_bevel(b, theme.btn_bevel, 1);
+		if (on) focus_dots(b, w - 8, h - 8);
+	} else {
+		lv_obj_set_style_border_width(b, 1, 0);
+		lv_obj_set_style_border_color(b, lv_color_hex(theme.btn_line), 0);
+		if (on) {
+			lv_obj_t *r = lv_obj_create(b);
+			lv_obj_remove_style_all(r);
+			lv_obj_set_size(r, w - 2, h - 2);
+			lv_obj_set_style_radius(r, theme.btn_radius > 1 ? theme.btn_radius - 1 : 0, 0);
+			lv_obj_set_style_border_width(r, 2, 0);
+			lv_obj_set_style_border_color(r, lv_color_hex(theme.btn_focus), 0);
+		}
+	}
+	lv_obj_t *l = ui_label(b, f, theme.btn_fg, t);
+	lv_obj_align(l, LV_ALIGN_CENTER, 0, 0);
+}
+
 static void draw_buttons(void)
 {
 	lv_obj_clean(buttons_row);
-	for (int i = 0; i < nacts; i++) {
+	for (int i = 0; i < nacts && theme.btn_bg != COLOR_UNSET; i++) theme_button(i);
+	for (int i = 0; i < nacts && theme.btn_bg == COLOR_UNSET; i++) {
 		lv_obj_t *b = ui_label(buttons_row, ui_font(13, 1), i == cur ? theme.sel_fg : theme.dim, act_text(acts[i]));
 		lv_obj_set_style_radius(b, theme.card_radius ? 6 : 0, 0);
 		lv_obj_set_style_pad_hor(b, 9, 0);
@@ -139,16 +197,38 @@ static lv_obj_t *text(lv_obj_t *parent, int px, int bold, uint32_t c, const char
 }
 
 /* a page: the app's icon and a title, body lines, then the action buttons along the bottom */
+static int dialog(void) { return theme.win && theme.win_dialogs; }
+
+/* a page: the app's icon and a title, body lines, then the action buttons along the bottom.
+ * In a theme with dialogs ([window] dialogs), a window over the home screen: the icon and the
+ * title in its title bar, the buttons at the right. */
 static void page(const char *title, const char *body, const enum action *a, int n, int sel)
 {
 	lv_obj_clean(panel);
-	lv_obj_t *col = lv_obj_create(panel);
+	lv_obj_t *root = panel;
+	int pw = SCREEN_W, ph = ui_page_rect().h;
+	if (dialog()) {
+		struct ui_win w;
+		ui_window(panel, 10, 5, SCREEN_W - 20, ph - 10, title, &app, 0, &w);
+		root = w.body;
+		pw = w.w;
+		ph = w.h + 8;   /* the body's own margin is smaller */
+	}
+	lv_obj_t *col = lv_obj_create(root);
 	lv_obj_remove_style_all(col);
 	lv_obj_remove_flag(col, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-	lv_obj_set_size(col, SCREEN_W - 16, ui_page_rect().h - 40);
-	lv_obj_set_pos(col, 8, 6);
+	lv_obj_set_size(col, pw - 16, ph - 40);
+	lv_obj_set_pos(col, 8, dialog() ? 4 : 6);
 	lv_obj_set_flex_flow(col, LV_FLEX_FLOW_COLUMN);
 	lv_obj_set_style_pad_row(col, 3, 0);
+	if (dialog()) {   /* the icon large at the left, as in a message box */
+		lv_obj_t *ic = icon_create(root, &app, 32);
+		lv_obj_set_pos(ic, 10, 8);
+		lv_obj_set_pos(col, 52, 4);
+		lv_obj_set_width(col, pw - 60);
+		text(col, 12, 0, theme.fg, body, pw - 60);
+		goto buttons;
+	}
 
 	lv_obj_t *head = lv_obj_create(col);
 	lv_obj_remove_style_all(head);
@@ -163,13 +243,14 @@ static void page(const char *title, const char *body, const enum action *a, int 
 
 	text(col, 12, 0, theme.dim, body, SCREEN_W - 16);
 
-	buttons_row = lv_obj_create(panel);
+buttons:
+	buttons_row = lv_obj_create(root);
 	lv_obj_remove_style_all(buttons_row);
 	lv_obj_remove_flag(buttons_row, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
-	lv_obj_set_size(buttons_row, SCREEN_W - 16, 30);
-	lv_obj_align(buttons_row, LV_ALIGN_BOTTOM_LEFT, 8, -6);
+	lv_obj_set_size(buttons_row, pw - 16, 30);
+	lv_obj_align(buttons_row, LV_ALIGN_BOTTOM_LEFT, 8, dialog() ? -2 : -6);
 	lv_obj_set_flex_flow(buttons_row, LV_FLEX_FLOW_ROW);
-	lv_obj_set_flex_align(buttons_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+	lv_obj_set_flex_align(buttons_row, dialog() ? LV_FLEX_ALIGN_END : LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 	lv_obj_set_style_pad_column(buttons_row, 8, 0);
 	if (n) memcpy(acts, a, sizeof(a[0]) * n);
 	nacts = n;
@@ -283,7 +364,7 @@ void appinfo_open(lv_obj_t *scr, const struct app *a, void (*done)(int changed))
 	struct ui_rect r = ui_page_rect();
 	lv_obj_set_pos(panel, r.x, r.y);
 	lv_obj_set_size(panel, r.w, r.h);
-	lv_obj_set_style_bg_opa(panel, LV_OPA_COVER, 0);
+	lv_obj_set_style_bg_opa(panel, dialog() ? LV_OPA_TRANSP : LV_OPA_COVER, 0);   /* a dialog: home stays behind it */
 	lv_obj_set_style_bg_color(panel, lv_color_hex(ui_page_bg()), 0);
 	find_package();
 	fprintf(stderr, "emuzero-launcher: app info %s (package %s%s)\n", app.id, pkg[0] ? pkg : "none", removable ? ", removable" : "");

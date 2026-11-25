@@ -10,3 +10,5 @@ void statusbar_create(lv_obj_t *scr);
 void statusbar_update(void);
 /* rows the bar takes, with its line */
 int statusbar_height(void);
+/* draw the bar's start button pushed in (its menu is open) or out */
+void statusbar_pressed(int on);
