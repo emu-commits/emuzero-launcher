@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Notes
+Comment=Notes and checklists, saved as you type
+Exec=emuzero-notes
+Terminal=false

@@ -52,7 +52,14 @@ LV_SRC := $(shell find $(LVGL)/src -name '*.c' 2>/dev/null)
 LV_OBJ := $(patsubst $(LVGL)/src/%.c,$(OUT)/lv/%.o,$(LV_SRC))
 BIN := $(OUT)/emuzero-launcher
 
-all: $(BIN)
+# emuZero Notes (apps/notes): its own program, sharing LVGL, the themes and the font paths
+NOTES_SRC := $(wildcard apps/notes/*.c)
+NOTES_SRC := $(filter-out apps/notes/nplat_%.c,$(NOTES_SRC)) apps/notes/nplat_$(PLATFORM).c
+NOTES_SHARED := src/theme.c src/paths.c src/status.c src/sys.c
+NOTES_OBJ := $(patsubst apps/notes/%.c,$(OUT)/notes/%.o,$(NOTES_SRC)) $(patsubst src/%.c,$(OUT)/notes/shared/%.o,$(NOTES_SHARED))
+NOTES_BIN := $(OUT)/emuzero-notes
+
+all: $(BIN) $(NOTES_BIN)
 
 $(LVGL)/lvgl.h:
 	@echo "LVGL is missing: run third_party/fetch.sh (or pass LVGL_PARENT=dir-containing-lvgl)"; exit 1
@@ -72,15 +79,32 @@ $(OUT)/%.o: src/%.c src/*.h src/lv_conf.h | $(LVGL)/lvgl.h
 $(BIN): $(OBJ) $(OUT)/liblvgl.a
 	$(CC) $(LDFLAGS) $(OBJ) $(OUT)/liblvgl.a $(DEPS_LIBS) $(PLAT_LIBS) -o $@
 
-install: $(BIN)
+$(OUT)/notes/main.o: VFLAGS := -DEMUZERO_VERSION='"$(VERSION)"'
+$(OUT)/notes/%.o: apps/notes/%.c apps/notes/*.h src/lv_conf.h | $(LVGL)/lvgl.h
+	@mkdir -p $(dir $@)
+	$(CC) $(ALL_CFLAGS) -Iapps/notes $(VFLAGS) -Wall -Wextra -c $< -o $@
+$(OUT)/notes/shared/%.o: src/%.c src/*.h src/lv_conf.h | $(LVGL)/lvgl.h
+	@mkdir -p $(dir $@)
+	$(CC) $(ALL_CFLAGS) -Wall -Wextra -c $< -o $@
+
+$(NOTES_BIN): $(NOTES_OBJ) $(OUT)/liblvgl.a
+	$(CC) $(LDFLAGS) $(NOTES_OBJ) $(OUT)/liblvgl.a $(DEPS_LIBS) $(PLAT_LIBS) -o $@
+
+notes: $(NOTES_BIN)
+
+install: $(BIN) $(NOTES_BIN)
 	install -D -m 0755 $(BIN) $(DESTDIR)$(PREFIX)/bin/emuzero-launcher
+	install -D -m 0755 $(NOTES_BIN) $(DESTDIR)$(PREFIX)/bin/emuzero-notes
+	install -D -m 0755 apps/notes/nz-clip $(DESTDIR)$(PREFIX)/bin/nz-clip
+	install -D -m 0644 apps/notes/guide.md $(DESTDIR)$(PREFIX)/share/emuzero/notes/guide.md
+	install -D -m 0644 apps/notes/emuzero-notes.desktop $(DESTDIR)$(PREFIX)/share/applications/emuzero-notes.desktop
 
 # ---- convenience targets ----
 BR ?= $(HOME)/cardputerzero-os/NimbleZero/out/compat
 device:
 	$(MAKE) PLATFORM=fbdev CC=$(BR)/host/bin/aarch64-linux-gcc AR=$(BR)/host/bin/aarch64-linux-ar \
 		PKG_CONFIG=$(BR)/host/bin/pkg-config CFLAGS="-O2"
-	$(BR)/host/bin/aarch64-linux-strip out/fbdev/emuzero-launcher
+	$(BR)/host/bin/aarch64-linux-strip out/fbdev/emuzero-launcher out/fbdev/emuzero-notes
 desktop:
 	$(MAKE) PLATFORM=sdl CFLAGS="-O2 -g"
 headless:
@@ -89,8 +113,16 @@ headless:
 # headless checks against the apps in test/root: each layout after a key script, as PNGs
 check: headless
 	@test/check.sh out/headless/emuzero-launcher out/check
+	@apps/notes/test/check.sh out/headless/emuzero-notes out/check-notes
+
+# the Notes app's unit tests (text buffer, undo, Markdown lines, names, saving): no LVGL needed
+notes-test:
+	@mkdir -p out/notes-test
+	$(CC) -O1 -g -fsanitize=address,undefined -Wall -Wextra -Iapps/notes -Isrc -I$(LVGL_PARENT) -DLV_CONF_INCLUDE_SIMPLE \
+		apps/notes/test/unit.c apps/notes/textbuf.c apps/notes/doc.c apps/notes/md.c apps/notes/store.c -o out/notes-test/unit
+	out/notes-test/unit
 
 clean:
 	rm -rf out
 
-.PHONY: all install device desktop headless check clean
+.PHONY: all install device desktop headless check clean notes notes-test

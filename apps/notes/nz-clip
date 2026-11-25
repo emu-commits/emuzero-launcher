@@ -1,0 +1,16 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# nz-clip: the emuZero clipboard from a shell, shared with emuZero Notes.
+#   echo hello | nz-clip      copy standard input
+#   nz-clip -o                print the current clip
+#   nz-clip -c                clear it
+uid=$(id -u)
+if [ -d "/run/user/$uid" ] && [ -O "/run/user/$uid" ]; then f="/run/user/$uid/emuzero-clipboard"
+else f="/tmp/emuzero-clipboard-$uid"; fi
+case "$1" in
+	-o|--out) [ -f "$f" ] && cat "$f" ;;
+	-c|--clear) rm -f "$f" ;;
+	-h|--help) sed -n '3,6p' "$0" | sed 's/^# //' ;;
+	"") umask 077; t="$f.$$.tmp"; cat > "$t" && mv -f "$t" "$f" ;;
+	*) echo "nz-clip: unknown option $1 (try -h)" >&2; exit 2 ;;
+esac

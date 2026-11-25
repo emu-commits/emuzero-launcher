@@ -7,6 +7,10 @@ keeps doing the work underneath. It contains no NimbleZero code; it calls Nimble
 
 Drawn with [LVGL](https://lvgl.io) 9.2.2 (MIT), chosen on measurements in [spike/](spike/README.md).
 
+The same repository holds **emuZero Notes** ([apps/notes/](apps/notes/README.md)), a notes app in the
+manner of iPhone Notes that replaces the image's Editor tile. It is a program of its own
+(`emuzero-notes`), built alongside the launcher by the same `make` targets.
+
 ## Building
 
 LVGL is fetched once and checked against a pinned hash:
@@ -139,6 +143,7 @@ the same helper NimbleZero's Store uses.
     spike/              the renderer comparison (Phase 2, row 1)
     test/root/          a pretend device file system for the checks (test/make-icons.py draws its icons)
     test/bin/           stand-ins for dpkg-query, dpkg and sudo used by the checks
+    apps/notes/         emuZero Notes, its own program (see its README)
 
 ## Licence
 

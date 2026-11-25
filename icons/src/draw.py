@@ -87,6 +87,21 @@ pen = pen.rotate(-40, resample=Image.BICUBIC, center=(px(50), px(70)), translate
 im.alpha_composite(pen)
 save(im, "nano")
 
+# Notes: a notepad with a yellow top, lines, and a ticked checklist item
+im, d = canvas()
+d.rounded_rectangle(box(14, 10, 86, 90), radius=px(9), fill=WHITE)
+d.rounded_rectangle(box(14, 10, 86, 30), radius=px(9), fill=YELLOW)
+d.rectangle(box(14, 22, 86, 30), fill=YELLOW)
+for x in (26, 40, 54, 68):                                                  # the pad's binding
+    d.ellipse(box(x - 2.5, 16, x + 2.5, 21), fill=(0, 0, 0, 0))
+d.rounded_rectangle(box(24, 40, 36, 52), radius=px(3), fill=GREEN)          # a ticked box
+line(d, [(27, 46), (29.5, 49), (33.5, 43)], WHITE, 2.4)
+d.rounded_rectangle(box(42, 43, 76, 49), radius=px(2), fill=GREY)
+d.rounded_rectangle(box(24, 58, 36, 70), radius=px(3), outline=GREY, width=px(2.4))
+d.rounded_rectangle(box(42, 61, 70, 67), radius=px(2), fill=GREY)
+d.rounded_rectangle(box(24, 77, 62, 83), radius=px(2), fill=GREY)
+save(im, "emuzero-notes")
+
 # Wi-Fi setup: three arcs over a dot
 im, d = canvas()
 cx, cy = 50, 78
