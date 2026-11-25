@@ -73,7 +73,12 @@ char *doc_text(struct doc *d, size_t *n);
 
 /* ---- fonts.c + draw.c ---- */
 enum { F_REG, F_BOLD, F_ITAL, F_BOLDITAL, F_MONO, F_H1, F_H2, F_H3, F_UI, F_UIBOLD, F_UISMALL, F_COUNT };
-struct palette { uint32_t bg, fg, dim, line, accent, sel_bg, sel_fg, bar_bg, bar_fg, bar_line, title_fg, code_bg, mark_bg, warn, ok, shadow_c; };
+struct palette {
+	uint32_t bg, fg, dim, line, accent;
+	uint32_t sel_bg, sel_fg, sel_dim;   /* the theme's selected row (lists, menus) and dim text on it */
+	uint32_t text_sel, focus;           /* selected text in a note; View mode's highlighted line */
+	uint32_t bar_bg, bar_fg, bar_line, title_fg, code_bg, mark_bg, warn, ok, shadow_c;
+};
 extern struct palette pal;
 extern int text_size;                 /* 0 small, 1 medium, 2 large */
 int fonts_init(const char *theme_id);

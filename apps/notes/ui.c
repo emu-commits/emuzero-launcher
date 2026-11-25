@@ -238,9 +238,9 @@ void overlay_draw(void)
 			struct mitem *m = &items[k];
 			int hw = m->hint[0] ? text_w(F_UISMALL, m->hint, strlen(m->hint)) : 0;
 			if (k == sel) d_rect(x + 3, ry - 1, w - 6, 15, pal.sel_bg);
-			uint32_t fg = m->off ? pal.dim : (k == sel ? pal.sel_fg : pal.fg);
+			uint32_t fg = m->off ? (k == sel ? pal.sel_dim : pal.dim) : (k == sel ? pal.sel_fg : pal.fg);
 			d_text_fit(F_UI, x + 8, ry, w - 22 - hw, fg, m->label);
-			if (hw) d_text(F_UISMALL, x + w - 8 - hw, ry + 1, pal.dim, m->hint, strlen(m->hint));
+			if (hw) d_text(F_UISMALL, x + w - 8 - hw, ry + 1, k == sel ? pal.sel_dim : pal.dim, m->hint, strlen(m->hint));
 		}
 		if (nitems > rows) {   /* scroll position */
 			int th = (rows * 15) * rows / nitems, ty = y + 22 + (rows * 15 - th) * top / (nitems - rows);

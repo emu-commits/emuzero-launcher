@@ -423,7 +423,10 @@ void view_draw(struct doc *d, const struct vdraw *v)
 		int para_y0 = py;
 		int ph = 0;
 		for (int r = r0; r < p->n; r++) ph += p->r[r].h;
-		if (v->focus == i) d_rect(v->x - 4, para_y0 - 1, v->w + 6, ph + 2, pal.sel_bg);
+		if (v->focus == i) {
+			d_rect(v->x - 4, para_y0 - 1, v->w + 6, ph + 2, pal.focus);
+			d_rect(v->x - 4, para_y0 - 1, 2, ph + 2, pal.accent);
+		}
 		if (ps.codebg && d_clip_rows(py, ph)) d_rect(v->x - 2, py, v->w + 4, ph, pal.code_bg);
 		if (ps.quote && d_clip_rows(py, ph)) d_rect(v->x + ps.first_x - 8, py + 1, 3, ph - 2, pal.line == pal.bg ? pal.dim : pal.line);
 		if (ps.rule && d_clip_rows(py, ph)) d_rect(v->x, py + ph / 2, v->w, 1, pal.dim);
@@ -432,7 +435,7 @@ void view_draw(struct doc *d, const struct vdraw *v)
 			int rh = p->r[r].h;
 			if (!d_clip_rows(py, rh) || ps.blank_h) {
 				if (ps.blank_h && v->s0 < v->s1 && v->s0 <= pstart + n && v->s1 > pstart + n && v->mode == MODE_EDIT)
-					d_rect(v->x, py, 4, rh, pal.sel_bg);
+					d_rect(v->x, py, 4, rh, pal.text_sel);
 				py += rh; continue;
 			}
 			uint32_t a = p->r[r].start, e = r + 1 < p->n ? p->r[r + 1].start : (uint32_t)n;
@@ -443,7 +446,7 @@ void view_draw(struct doc *d, const struct vdraw *v)
 				draw_bg_range(s, p, r, v->x, py, rh, m0 > pstart ? m0 - pstart : 0, m1 - pstart, pal.mark_bg, 0);
 			}
 			if (v->s0 < v->s1 && v->s1 > pstart + a && v->s0 <= pstart + e)
-				draw_bg_range(s, p, r, v->x, py, rh, v->s0 > pstart ? v->s0 - pstart : 0, v->s1 - pstart, pal.sel_bg, r + 1 == p->n);
+				draw_bg_range(s, p, r, v->x, py, rh, v->s0 > pstart ? v->s0 - pstart : 0, v->s1 - pstart, pal.text_sel, r + 1 == p->n);
 			/* the text */
 			int xx = v->x + p->r[r].x0;
 			for (int k = 0; k < nsp; k++) {

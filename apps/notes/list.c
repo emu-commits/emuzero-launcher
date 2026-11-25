@@ -349,6 +349,7 @@ void list_key(struct nkey k)
 }
 
 /* draw text with the ranges [hl] on a marked background */
+static uint32_t mark_on_sel;   /* the mark colour on the selected row */
 static void text_marked(int f, int x, int y, int maxw, uint32_t c, const char *s, const int (*hl)[2], int nhl)
 {
 	size_t n = strlen(s);
@@ -359,7 +360,7 @@ static void text_marked(int f, int x, int y, int maxw, uint32_t c, const char *s
 		int x0 = text_w(f, s, (size_t)a), x1 = text_w(f, s, (size_t)b);
 		if (x0 >= maxw) continue;
 		if (x1 > maxw) x1 = maxw;
-		d_rect(x + x0 - 1, y, x1 - x0 + 1, font_lh(f), pal.mark_bg);
+		d_rect(x + x0 - 1, y, x1 - x0 + 1, font_lh(f), mark_on_sel ? mark_on_sel : pal.mark_bg);
 	}
 	(void)w;
 	d_text_fit(f, x, y, maxw, c, s);
@@ -405,6 +406,7 @@ void list_draw(void)
 		int is_sel = i == sel;
 		if (is_sel) d_rrect(3, y + 1, SCREEN_W - 9, h - 2, 4, pal.sel_bg);
 		uint32_t fg = is_sel ? pal.sel_fg : pal.fg;
+		mark_on_sel = is_sel ? (pal.sel_bg & 0xfefefe) / 2 + (0xb08a20 & 0xfefefe) / 2 : 0;
 		if (r->kind == R_NEW) {
 			char t[180];
 			snprintf(t, sizeof(t), "+  New note \"%s\"", query);
@@ -430,9 +432,10 @@ void list_draw(void)
 			}
 			text_marked(F_UIBOLD, 10, y + 2, SCREEN_W - 28 - dw, fg, title, (const int (*)[2])hl, nhl);
 		} else d_text_fit(F_UIBOLD, 10 + (pin ? 10 : 0), y + 2, SCREEN_W - 28 - dw - (pin ? 10 : 0), fg, title);
-		d_text(F_UISMALL, SCREEN_W - 12 - dw, y + 3, pal.dim, date, strlen(date));
-		if (r->hit >= 0) text_marked(F_UI, 10, y + 16, SCREEN_W - 24, pal.dim, hits[r->hit].snip, (const int (*)[2])hits[r->hit].hl, hits[r->hit].nhl);
-		else d_text_fit(F_UI, 10, y + 16, SCREEN_W - 24, pal.dim, n->snippet[0] ? n->snippet : "No additional text");
+		uint32_t dim = is_sel ? pal.sel_dim : pal.dim;
+		d_text(F_UISMALL, SCREEN_W - 12 - dw, y + 3, dim, date, strlen(date));
+		if (r->hit >= 0) text_marked(F_UI, 10, y + 16, SCREEN_W - 24, dim, hits[r->hit].snip, (const int (*)[2])hits[r->hit].hl, hits[r->hit].nhl);
+		else d_text_fit(F_UI, 10, y + 16, SCREEN_W - 24, dim, n->snippet[0] ? n->snippet : "No additional text");
 		if (!is_sel && i + 1 < nrows && rows[i + 1].kind == R_NOTE) d_rect(10, y + h - 1, SCREEN_W - 20, 1, pal.line);
 		y += h;
 	}

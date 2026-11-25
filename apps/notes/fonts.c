@@ -85,6 +85,11 @@ int fonts_init(const char *theme_id)
 	pal.shadow_c = mix(pal.bg, 0x000000, 45);
 	/* a selection colour too close to the background (some themes) would not show */
 	if (theme.sel_bg == pal.bg) pal.sel_bg = mix(pal.bg, pal.accent, 30);
+	pal.sel_dim = mix(pal.sel_fg, pal.sel_bg, 35);
+	/* text keeps its own colour over these, so they are light tints of the accent, whatever
+	 * the theme's selected-row colour is (black in Paper, navy in Desktop 95) */
+	pal.text_sel = mix(pal.bg, pal.accent, 32);
+	pal.focus = mix(pal.bg, pal.accent, 14);
 
 	lv_freetype_init(LV_FREETYPE_CACHE_FT_GLYPH_CNT);
 	snprintf(files[0], sizeof(files[0]), "%s", theme.font[0][0] ? theme.font[0] : (path_font(0) ? path_font(0) : ""));
