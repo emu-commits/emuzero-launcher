@@ -39,6 +39,18 @@ static int mkdir_p(const char *dir)
 	return mkdir(p, 0755) && errno != EEXIST ? -1 : 0;
 }
 
+/* the extension of a note's file name (".md" or ".txt"), and its length without it */
+const char *note_ext(const char *f)
+{
+	size_t l = strlen(f);
+	return l > 4 && !strcmp(f + l - 4, ".txt") ? ".txt" : ".md";
+}
+size_t note_stem(const char *f)
+{
+	size_t l = strlen(f), e = strlen(note_ext(f));
+	return l >= e && !strcmp(f + l - e, note_ext(f)) ? l - e : l;
+}
+
 static int has_ext(const char *f)
 {
 	size_t l = strlen(f);
@@ -265,9 +277,10 @@ void store_name_for(const char *text, size_t n, const char *current, char *out, 
 		time_t t = time(NULL);
 		strftime(base, sizeof(base), "Note %Y-%m-%d %H%M", localtime(&t));
 	}
+	const char *ext = current ? note_ext(current) : ".md";   /* a .txt note stays .txt */
 	for (int k = 1; k < 1000; k++) {
-		if (k == 1) snprintf(out, outn, "%s.md", base);
-		else snprintf(out, outn, "%s %d.md", base, k);
+		if (k == 1) snprintf(out, outn, "%s%s", base, ext);
+		else snprintf(out, outn, "%s %d%s", base, k, ext);
 		if (current && !strcmp(out, current)) return;
 		char p[800];
 		path_note(p, sizeof(p), out);
@@ -310,8 +323,8 @@ int store_trash(const char *file)
 		snprintf(b, sizeof(b), "%s/.Trash/%s", notes_dir, name);
 		if (access(b, F_OK)) break;
 		char stem[240];
-		snprintf(stem, sizeof(stem), "%.*s", (int)(strlen(file) - 3), file);
-		snprintf(name, sizeof(name), "%s %d.md", stem, k);
+		snprintf(stem, sizeof(stem), "%.*s", (int)note_stem(file), file);
+		snprintf(name, sizeof(name), "%s %d%s", stem, k, note_ext(file));
 	}
 	if (rename(a, b)) return -1;
 	fsync_dir(a);

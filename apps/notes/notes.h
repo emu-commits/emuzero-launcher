@@ -168,6 +168,8 @@ void set_pinned(const char *file, int on);
 void state_load(void);
 void state_save(void);
 void path_note(char *out, size_t n, const char *file);
+const char *note_ext(const char *file);
+size_t note_stem(const char *file);
 
 /* ---- search.c ---- */
 struct hit { int note; int score; char snip[160]; int hl[6][2]; int nhl; int title_hit; };

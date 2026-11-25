@@ -106,10 +106,10 @@ int ed_save(void)
 	if (E.on_disk && !store_stat(path, &mt, &sz) && (mt != E.disk_mtime || sz != E.disk_size)) {
 		if (!E.external) {
 			char other[256], stem[220], probe[300];
-			snprintf(stem, sizeof(stem), "%.*s", (int)(strlen(E.file) - 3), E.file);
+			snprintf(stem, sizeof(stem), "%.*s", (int)note_stem(E.file), E.file);
 			for (int k = 1; k < 100; k++) {
-				if (k == 1) snprintf(other, sizeof(other), "%s (other copy).md", stem);
-				else snprintf(other, sizeof(other), "%s (other copy %d).md", stem, k);
+				if (k == 1) snprintf(other, sizeof(other), "%s (other copy)%s", stem, note_ext(E.file));
+				else snprintf(other, sizeof(other), "%s (other copy %d)%s", stem, k, note_ext(E.file));
 				path_note(probe, sizeof(probe), other);
 				if (access(probe, F_OK)) break;
 			}
@@ -311,12 +311,12 @@ void ed_close(void)
 	if (!E.external && E.file[0]) {
 		size_t n;
 		char *s = doc_text(&E.d, &n);
-		if (blank_text(s, n)) {   /* an empty note is dropped, as on the iPhone */
+		if (blank_text(s, n) && E.d.changes) {   /* a note emptied now is dropped, as on the iPhone */
 			char p[800];
 			path_note(p, sizeof(p), E.file);
 			unlink(p);
 			set_pinned(E.file, 0);
-		} else if (!E.save_err) {
+		} else if (!E.save_err && E.d.changes) {   /* only a note edited now takes its title's name */
 			char want[256];
 			store_name_for(s, n, E.file, want, sizeof(want));
 			if (strcmp(want, E.file) && !store_rename(E.file, want)) {
@@ -325,8 +325,8 @@ void ed_close(void)
 				if (pinned) set_pinned(want, 1);
 				snprintf(E.file, sizeof(E.file), "%s", want);
 			}
-			snprintf(keep, sizeof(keep), "%s", E.file);
 		}
+		if (!blank_text(s, n)) snprintf(keep, sizeof(keep), "%s", E.file);
 		free(s);
 	}
 	if (E.save_err) {   /* stay: closing would lose the text */

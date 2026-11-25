@@ -211,6 +211,21 @@ expect_file Beta.md "Beta
 body"
 expect_none Alpha.md
 
+case=view-keeps-name; fresh
+mkdir -p "$NOTES_DIR"
+printf 'Things to do\n- [ ] call\n' > "$NOTES_DIR/todo.md"
+: > "$NOTES_DIR/empty.md"
+run <<K
+key enter
+key esc
+key down
+key enter
+key esc
+K
+expect_file todo.md "Things to do
+- [ ] call"
+expect_file empty.md ""
+
 case=empty-dropped; fresh
 run <<K
 key ctrl+n

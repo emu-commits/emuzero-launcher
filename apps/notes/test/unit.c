@@ -189,6 +189,9 @@ static void test_store(void)
 	CHECKS(name, "Groceries 2.md");
 	store_name_for("Groceries", 9, "Groceries.md", name, sizeof(name));
 	CHECKS(name, "Groceries.md");
+	store_name_for("Shopping", 8, "list.txt", name, sizeof(name));
+	CHECKS(name, "Shopping.txt");
+	CHECK(note_stem("a.txt") == 1 && note_stem("bb.md") == 2 && !strcmp(note_ext("x.txt"), ".txt"));
 	store_name_for("a/b: c?", 7, NULL, name, sizeof(name));
 	CHECKS(name, "ab c.md");
 	store_name_for("...hidden", 9, NULL, name, sizeof(name));
