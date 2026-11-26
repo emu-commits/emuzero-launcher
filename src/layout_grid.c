@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Grid: pages of 2 rows x 5 apps, each an icon with its name under it. Arrows move between
 // apps; Left/Right past the edge of a page flips to the previous/next page (the last page
-// wraps to the first). Dots at the bottom show the page.
+// wraps to the first); Down past the bottom row and Up past the top row go on to the next or
+// previous page in the same column, as a scrolled window would (no wrap). Dots at the bottom,
+// or a scrollbar when the theme has one, show the page.
 #include "layout.h"
 #include "apps.h"
 #include "icons.h"
@@ -204,10 +206,15 @@ static int move(uint32_t key, int sel, int n)
 		sel = page * PER + row * COLS + COLS - 1;
 		return sel > last ? last : sel;
 	case LV_KEY_UP:
-		return row > 0 ? sel - COLS : sel;
+		if (row > 0) return sel - COLS;
+		/* past the top row: the previous page's bottom row, same column (no wrap) */
+		return page > 0 ? (page - 1) * PER + (ROWS - 1) * COLS + col : sel;
 	case LV_KEY_DOWN:
 		if (row < ROWS - 1 && sel + COLS <= last) return sel + COLS;
 		if (row < ROWS - 1 && page * PER + COLS <= last) return last;   /* short second row */
+		/* past the bottom row: the next page's top row, same column, as a scrolled window
+		 * would (no wrap; a short page gives its last app) */
+		if (page < pages - 1) return (page + 1) * PER + col > last ? last : (page + 1) * PER + col;
 		return sel;
 	}
 	return sel;

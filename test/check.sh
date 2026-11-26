@@ -31,6 +31,12 @@ shot grid            --layout grid
 shot grid-down-right --layout grid --keys down,right
 shot grid-page2      --layout grid --keys right,right,right,right,right
 shot grid-page2-down --layout grid --keys right,right,right,right,right,down
+# Down past a page's bottom row goes on to the next page (same column), Up back; no wrap
+for kv in down,down:netinfo down,down,down:snake down,down,up:eclair down,down,down,down,down:weather right,right,right,right,right,up:eclair up:longname; do
+	got=$("$bin" --layout grid --keys "${kv%%:*},enter" 2>&1 | sed -n 's/^emuzero-launcher: \([^ ]*\) ended.*/\1/p')
+	[ "$got" = "${kv##*:}" ] || { echo "check: grid keys ${kv%%:*} opened '$got', not ${kv##*:}"; exit 1; }
+done
+echo "check: grid Up/Down cross pages"
 mkdir -p "$out/empty"
 EMUZERO_ROOT="$out/empty" shot empty-grid --layout grid --keys right
 

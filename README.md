@@ -66,7 +66,8 @@ Two layouts; the theme names one, and the Theme page can choose either:
 - `carousel`: three framed cards, the selected one large in the middle, names under them, a
   position bar; Left/Right step through the apps and wrap around.
 - `grid`: pages of 2 x 5 icons with names; arrows move, Left/Right past the page edge flips the
-  page.
+  page (and wraps round), Down past the bottom row and Up past the top row go on to the next or
+  previous page in the same column.
 
 A layout is one file implementing `struct layout` (`src/layout.h`): build, show a selection, and
 where an arrow moves the selection. The home screen keeps the app list, the selection and the keys.
