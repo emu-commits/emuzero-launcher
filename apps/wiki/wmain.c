@@ -167,10 +167,10 @@ char *builtin_page(int id, char *title, size_t tn)
 		snprintf(title, tn, "Get Wikipedia");
 		P("Simple English Wikipedia is one file, `simplewiki.wpack` (about 234 MB, 267,000 articles, searchable inside the text).\n\n");
 		P("## Copy it from a computer\n\n");
-		P("1. Make the folder on the device: `mkdir -p ~/Wiki`\n");
-		P("2. From the computer, over Wi-Fi:\n\n");
-		P("```\ncat simplewiki.wpack | ssh zero@nimblezero.local 'cat > ~/Wiki/simplewiki.wpack'\n```\n\n");
-		P("3. Open the Wiki again: Wikipedia shows on the search screen.\n\n");
+		P("1. From the computer, over Wi-Fi (one line):\n\n");
+		P("```\nssh zero@nimblezero.local 'mkdir -p ~/Wiki && cat > ~/Wiki/simplewiki.part && mv ~/Wiki/simplewiki.part ~/Wiki/simplewiki.wpack' < simplewiki.wpack\n```\n\n");
+		P("2. Open the Wiki again: Wikipedia shows on the search screen.\n\n");
+		P("The file arrives under another name and gets its own only when it is complete, so a copy that stops halfway is never taken for the pack; run the line again to start over.\n\n");
 		P("At this house's Wi-Fi speed (about 200 KB/s) the copy takes about 20 minutes.\n\n");
 		P("## Make the file yourself\n\n");
 		P("From the emuzero-launcher source: `apps/wiki/tools/build-pack.py simplewiki wiki-slim.db simplewiki.wpack`\n");

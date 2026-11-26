@@ -61,9 +61,9 @@ letter start. Article ids follow a score (the article's length and how many othe
 "Related pages" point to it, both logarithmic), so the first ids that match are the best ones.
 The survival pack is small enough to search in memory.
 
-Getting Wikipedia onto the device is described on the app's *Get Wikipedia* page (copy over
-Wi-Fi with `ssh ... 'cat > ~/Wiki/simplewiki.wpack'`); a download from a published release
-waits for the owner (WIKI-APP-PLAN.md §9 D3).
+Getting Wikipedia onto the device is described on the app's *Get Wikipedia* page: one `ssh` line
+that copies it under a temporary name and renames it when complete. A download from a published
+release waits for the owner (WIKI-APP-PLAN.md §9 D3).
 
 ## Building and testing
 
