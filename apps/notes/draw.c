@@ -129,3 +129,13 @@ void d_check(int x, int y, int sz, int ticked)
 		d_frame(x, y, sz, sz, 1, pal.dim);
 	}
 }
+
+/* a picture already in the display's format (emuZero Wiki); LVGL reads it during this refresh */
+void d_image(const lv_image_dsc_t *img, int x, int y)
+{
+	lv_draw_image_dsc_t d;
+	lv_draw_image_dsc_init(&d);
+	d.src = img;
+	lv_area_t a = { x, y, x + (int)img->header.w - 1, y + (int)img->header.h - 1 };
+	lv_draw_image(layer, &d, &a);
+}

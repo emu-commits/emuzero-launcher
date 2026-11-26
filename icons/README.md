@@ -52,5 +52,5 @@ SOFTWARE.
 
 Drawn by `src/draw.py` in the same flat style, for the apps M5's set has no picture for:
 `nz-diag.png` (Diagnostics), `nz-services.png` (Services), `htop.png` (System monitor),
-`nano.png` (Editor), `emuzero-notes.png` (Notes), `nz-wifi.png` (Wi-Fi setup), `nz-poweroff.png` (Power off) and
+`nano.png` (Editor), `emuzero-notes.png` (Notes), `emuzero-wiki.png` (Wiki), `nz-wifi.png` (Wi-Fi setup), `nz-poweroff.png` (Power off) and
 `emuzero-theme.png` (the Theme tile). To draw them again: `python3 icons/src/draw.py icons`.

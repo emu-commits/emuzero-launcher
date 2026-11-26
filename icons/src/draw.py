@@ -131,3 +131,16 @@ d.ellipse(box(54, 52, 70, 68), fill=(0, 0, 0, 0))                          # thu
 for x, y, c in ((26, 34, RED), (44, 26, YELLOW), (63, 30, GREEN), (24, 54, BLUE)):
     d.ellipse(box(x - 7, y - 7, x + 7, y + 7), fill=c)
 save(im, "emuzero-theme")
+
+# Wiki: an open book with a magnifying glass over its corner
+im, d = canvas()
+d.rounded_rectangle(box(8, 22, 92, 82), radius=px(8), fill=BLUE)            # the cover, behind
+d.polygon([(px(14), px(20)), (px(48), px(26)), (px(48), px(78)), (px(14), px(72))], fill=WHITE)   # left page
+d.polygon([(px(86), px(20)), (px(52), px(26)), (px(52), px(78)), (px(86), px(72))], fill=WHITE)   # right page
+for y in (34, 44, 54):
+    line(d, [(21, y - 2), (41, y + 1.5)], GREY, 3.2)
+for y in (34, 44):
+    line(d, [(59, y + 1.5), (79, y - 2)], GREY, 3.2)
+d.ellipse(box(56, 48, 82, 74), fill=WHITE, outline=ORANGE, width=px(6))     # the glass
+line(d, [(79, 71), (90, 84)], ORANGE, 8)                                    # its handle
+save(im, "emuzero-wiki")

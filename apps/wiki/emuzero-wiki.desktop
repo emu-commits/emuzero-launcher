@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Wiki
+Comment=Survival guides and Wikipedia, offline
+Exec=emuzero-wiki
+Terminal=false

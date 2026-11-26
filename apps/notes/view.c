@@ -16,8 +16,25 @@ enum { SF_DIM = 1, SF_ACCENT = 2, SF_STRIKE = 4, SF_UNDER = 8, SF_CODEBG = 16, S
 struct span { uint32_t off, len; uint8_t kind, font, flags; int16_t w; const char *glyph; };
 struct pstyle {
 	int kind, lh, asc, font, first_x, hang_x, pad_top, pad_bot, ticked, quote, rule, codebg, blank_h, title;
+	uint32_t pic_off, pic_len;    /* a picture line (view_pic): where its src is */
 	struct linfo li;
 };
+
+const struct view_pic_hook *view_pic;
+
+/* "![alt](src)" alone on the line: the src's offset and length */
+static int pic_line(const char *s, size_t n, uint32_t *off, uint32_t *len)
+{
+	size_t a = 0;
+	while (a < n && s[a] == ' ') a++;
+	while (n > a && s[n - 1] == ' ') n--;
+	if (n - a < 6 || s[a] != '!' || s[a + 1] != '[' || s[n - 1] != ')') return 0;
+	const char *m = memchr(s + a, ']', n - a);
+	if (!m || (size_t)(m - s) + 1 >= n || m[1] != '(') return 0;
+	*off = (uint32_t)(m - s) + 2;
+	*len = (uint32_t)(n - 1 - *off);
+	return memchr(s + *off, ')', *len) == NULL;
+}
 struct play {
 	uint32_t ver, gen; int mode, w, plain;
 	struct pstyle ps;
@@ -118,6 +135,11 @@ static void build(struct doc *d, int i, int mode, int plain, struct pstyle *ps)
 	}
 
 	/* View mode */
+	if (view_pic && li.kind == LK_TEXT && pic_line(s, n, &ps->pic_off, &ps->pic_len)) {
+		add(0, (uint32_t)n, SK_HIDE, base, 0, 0, NULL);
+		ps->pad_top = ps->pad_bot = 3;
+		return;
+	}
 	struct ictx c = { base, 0 };
 	int indent = (int)(lead / 2) * 14;
 	switch (li.kind) {
@@ -258,6 +280,7 @@ static struct play *layout(struct doc *d, int i, int mode, int w, int plain)
 	p->n = nr;
 	memcpy(p->r, rows, (size_t)nr * sizeof(*rows));
 	if (ps.blank_h) { p->n = 1; p->r[0].h = (int16_t)ps.blank_h; }
+	if (ps.pic_len) { p->n = 1; p->r[0].h = (int16_t)view_pic->height(s + ps.pic_off, ps.pic_len, w); }
 	p->h = ps.pad_top + ps.pad_bot;
 	for (int k = 0; k < p->n; k++) p->h += p->r[k].h;
 	d->p[i].lay = p;
@@ -431,6 +454,7 @@ void view_draw(struct doc *d, const struct vdraw *v)
 		if (ps.quote && d_clip_rows(py, ph)) d_rect(v->x + ps.first_x - 8, py + 1, 3, ph - 2, pal.line == pal.bg ? pal.dim : pal.line);
 		if (ps.rule && d_clip_rows(py, ph)) d_rect(v->x, py + ph / 2, v->w, 1, pal.dim);
 		size_t pstart = d->p[i].start;
+		if (ps.pic_len && d_clip_rows(py, ph)) view_pic->draw(s + ps.pic_off, ps.pic_len, v->x, py, v->w, ph);
 		for (int r = r0; r < p->n && py < bottom; r++) {
 			int rh = p->r[r].h;
 			if (!d_clip_rows(py, rh) || ps.blank_h) {

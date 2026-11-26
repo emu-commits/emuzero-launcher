@@ -788,8 +788,11 @@
 #define LV_USE_BMP 0
 
 /* JPG + split JPG decoder library.
- * Split JPG is a custom format optimized for embedded systems. */
+ * Split JPG is a custom format optimized for embedded systems.
+ * Off; emuZero Wiki compiles the decoder for itself with -DLV_USE_TJPGD=1. */
+#ifndef LV_USE_TJPGD
 #define LV_USE_TJPGD 0
+#endif
 
 /* libjpeg-turbo decoder library.
  * Supports complete JPEG specifications and high-performance JPEG decoding. */

@@ -99,6 +99,7 @@ int d_text_fit(int f, int x, int y, int maxw, uint32_t c, const char *s);   /* c
 int d_text_deco(int f, int x, int y, uint32_t c, const char *s, size_t n, int strike, int underline);
 int d_clip_rows(int y, int h);        /* is [y, y+h) inside what is being drawn? */
 void d_check(int x, int y, int size, int ticked);
+void d_image(const lv_image_dsc_t *img, int x, int y);   /* RGB565, for emuZero Wiki's pictures */
 
 /* ---- view.c: laying out and drawing a note ---- */
 enum { MODE_VIEW, MODE_EDIT };
@@ -122,6 +123,13 @@ void view_pos(struct doc *d, int mode, int w, int plain, size_t pos, int *para, 
 size_t view_hit(struct doc *d, int mode, int w, int plain, int para, int row, int x);
 size_t view_snap(struct doc *d, size_t pos, int dir);   /* step out of a checkbox's hidden marks */
 void view_draw(struct doc *d, const struct vdraw *v);
+/* View mode only, NULL in Notes: a line that is just a picture, ![alt](src), is laid out as one
+ * row of height(src) and drawn by draw() (emuZero Wiki's pictures) */
+struct view_pic_hook {
+	int (*height)(const char *src, size_t n, int w);
+	void (*draw)(const char *src, size_t n, int x, int y, int w, int h);
+};
+extern const struct view_pic_hook *view_pic;
 
 /* ---- store.c: the notes folder, saving, the state file ---- */
 struct note {
