@@ -83,9 +83,14 @@ search and article times to stderr (the app log, `/tmp/emuzero-app.log`, on the 
 Measured on this PC (Intel i7-6700HQ, the 234 MB pack): a title search per key 0–2 ms;
 opening "United States" 8 ms, the largest article (243 KB) 9 ms; search inside articles 4–40 ms,
 most of it reading the first 60 matches to order them; 7 MB of memory at start, 12 MB after
-searches, that article and a picture at full size. The device is about 7–8
-times slower, and its SD card adds time on the first touch: device timings are still to be taken
-(WIKI-APP-PLAN.md §7 W4).
+searches, that article and a picture at full size.
+
+Measured on the CardputerZero (2026-11-26, both packs, the 234 MB one on the SD card), cold
+(page cache dropped) / warm: opening the packs 38 / 9 ms; a title search per key mostly
+1–30 / 1–10 ms (100 ms at worst, cold); "United States" 10 / 5 ms, "List of people from Texas"
+(3,635 lines) 26 / 14 ms; search inside "purify water" 118 / 94 ms, "how to start a fire"
+351 / 232 ms, "the" 233 / 192 ms; 5.6 MB of memory at start, 10.7 MB after all of that and a
+picture at full size.
 
 ## Code
 
